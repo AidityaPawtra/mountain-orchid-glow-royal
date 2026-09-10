@@ -1,0 +1,1 @@
+async function e(e){if(e.size>18e4)return{name:e.name};let t=await new Promise((t,n)=>{let r=new FileReader;r.onload=()=>t(String(r.result)),r.onerror=()=>n(Error(`Gagal membaca berkas`)),r.readAsDataURL(e)});return{name:e.name,dataUrl:t}}export{e as t};

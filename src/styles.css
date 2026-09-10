@@ -1,0 +1,103 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+
+  --color-bg: #f5f8fc;
+  --color-background: #f5f8fc;
+  --color-surface: #ffffff;
+  --color-card: #ffffff;
+  --color-card-foreground: #0f172a;
+  --color-fg: #0f172a;
+  --color-foreground: #0f172a;
+  --color-muted: #eef3f9;
+  --color-muted-foreground: #64748b;
+  --color-primary: #0b63ce;
+  --color-primary-foreground: #ffffff;
+  --color-primary-hover: #0957b5;
+  --color-primary-soft: #e7f0fb;
+  --color-navy: #0b3a67;
+  --color-navy-fg: #f8fbff;
+  --color-navy-muted: #9bb8d6;
+  --color-sidebar: #0b3a67;
+  --color-sidebar-fg: #f8fbff;
+  --color-sidebar-muted: #9bb8d6;
+  --color-sidebar-hover: #13487a;
+  --color-border: #e2e8f0;
+  --color-input: #e2e8f0;
+  --color-ring: #0b63ce;
+  --color-accent: #e7f0fb;
+  --color-accent-foreground: #0b3a67;
+  --color-secondary: #eef3f9;
+  --color-secondary-foreground: #0b3a67;
+  --color-destructive: #c03535;
+  --color-destructive-foreground: #ffffff;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0f172a;
+  --color-success: #0f8a5f;
+  --color-success-foreground: #ffffff;
+  --color-success-soft: #e6f6ef;
+  --color-warning: #c47a0a;
+  --color-warning-foreground: #ffffff;
+  --color-warning-soft: #fef4e4;
+  --color-danger: #c03535;
+  --color-danger-soft: #fdecec;
+
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.25rem;
+  --radius: 0.75rem;
+
+  --shadow-card:
+    0 0 0 1px rgb(15 23 42 / 0.04),
+    0 1px 2px -1px rgb(15 23 42 / 0.05),
+    0 2px 8px 0 rgb(15 23 42 / 0.04);
+  --shadow-card-hover:
+    0 0 0 1px rgb(15 23 42 / 0.06),
+    0 4px 14px -2px rgb(15 23 42 / 0.08);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

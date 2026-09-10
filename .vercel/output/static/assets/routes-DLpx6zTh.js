@@ -1,0 +1,1 @@
+import{D as e,t}from"./store-D_smkfdc.js";import{n}from"./app-shell-CozmEaMw.js";import{s as r}from"./index-ByPrpGzq.js";var i=e();function a(){let e=t(e=>e.ready),a=t(e=>e.session);return e?(0,i.jsx)(r,{to:a?`/dashboard`:`/login`}):(0,i.jsx)(n,{})}export{a as component};

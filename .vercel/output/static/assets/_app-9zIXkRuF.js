@@ -1,0 +1,1 @@
+import{D as e}from"./store-D_smkfdc.js";import{t}from"./app-shell-CozmEaMw.js";import{a as n}from"./index-ByPrpGzq.js";var r=e();function i(){return(0,r.jsx)(t,{children:(0,r.jsx)(n,{})})}export{i as component};
