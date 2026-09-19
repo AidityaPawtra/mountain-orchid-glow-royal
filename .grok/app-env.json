@@ -1,6 +1,6 @@
 {
   "VITE_AUTH_ENABLED": "false",
   "deploy": {
-    "database": false
+    "DATABASE_URL": "postgresql://app_user:rahasia123@127.0.0.1:5432/mountain_orchid_glow_royal"
   }
 }
