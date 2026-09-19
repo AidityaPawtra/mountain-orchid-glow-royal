@@ -10,10 +10,10 @@ import { t as PageHeader } from "./page-header-Bg2HBKvP.mjs";
 import { t as ConfirmDialog } from "./confirm-dialog-Sc37UT1t.mjs";
 import { a as CardTitle, i as CardHeader, n as CardContent, r as CardDescription, t as Card } from "./card-BzJc9zJP.mjs";
 import { t as Textarea } from "./textarea-Br6N8YHr.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/pengaturan-BdO3J8XR.js
+//#region node_modules/.nitro/vite/services/ssr/assets/profil-lrDsSHtr.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
-function PengaturanPage() {
+function ProfilePage() {
 	const settings = useAppStore((s) => s.settings);
 	const saveSettings = useAppStore((s) => s.saveSettings);
 	const restoreDemo = useAppStore((s) => s.restoreDemo);
@@ -41,14 +41,14 @@ function PengaturanPage() {
 			adminUsername: form.adminUsername.trim(),
 			adminEmail: form.adminEmail.trim()
 		});
-		toast.success("Perubahan pengaturan disimpan.");
+		toast.success("Perubahan profile disimpan.");
 	}
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "space-y-6",
 		children: [
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(PageHeader, {
-				title: "Pengaturan",
-				description: "Kelola profil BUMDes dan akun administrator."
+				title: "Profile",
+				description: "Kelola profile BUMDes dan akun administrator."
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
 				onSubmit: handleSubmit,
@@ -192,7 +192,7 @@ function PengaturanPage() {
 				open: resetOpen,
 				onOpenChange: setResetOpen,
 				title: "Pulihkan data contoh?",
-				description: "Semua transaksi, barang, dan peminjaman akan dikembalikan ke data awal. Pengaturan saat ini tidak diubah.",
+				description: "Semua transaksi, barang, dan peminjaman akan dikembalikan ke data awal. Profil saat ini tidak diubah.",
 				confirmLabel: "Pulihkan",
 				destructive: true,
 				onConfirm: () => {
@@ -204,4 +204,4 @@ function PengaturanPage() {
 	});
 }
 //#endregion
-export { PengaturanPage as component };
+export { ProfilePage as component };

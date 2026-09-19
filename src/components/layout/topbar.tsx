@@ -190,13 +190,13 @@ export function Topbar({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuLabel>Akun</DropdownMenuLabel>
-            <DropdownMenuItem onSelect={() => void navigate({ to: "/pengaturan" })}>
+            <DropdownMenuItem onSelect={() => void navigate({ to: "/profile" })}>
               <UserRound className="size-4" />
-              Profil
+              Profile
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => void navigate({ to: "/pengaturan" })}>
+            <DropdownMenuItem onSelect={() => void navigate({ to: "/profile" })}>
               <Settings className="size-4" />
-              Pengaturan
+              Profile
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={handleLogout} className="text-danger">

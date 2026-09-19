@@ -12,9 +12,10 @@ import type { IncomeRecord, ProofFile } from "@/lib/types";
 export type IncomeFormValue = Omit<IncomeRecord, "id" | "createdAt">;
 
 const EMPTY: IncomeFormValue = {
-  date: todayISO(),
+  bumdesTypeId: "",
+  date: "",
   source: "",
-  category: "Penjualan",
+  category: "",
   description: "",
   amount: 0,
   proof: null,
@@ -25,13 +26,18 @@ export function IncomeForm({
   submitLabel,
   onSubmit,
   onCancel,
+  bumdesTypeId,
 }: {
   initial?: IncomeFormValue;
   submitLabel: string;
   onSubmit: (value: IncomeFormValue) => void;
   onCancel: () => void;
+  bumdesTypeId?: string;
 }) {
-  const [form, setForm] = useState<IncomeFormValue>(initial ?? EMPTY);
+  const [form, setForm] = useState<IncomeFormValue>({
+  ...(initial ?? EMPTY),
+  bumdesTypeId: initial?.bumdesTypeId ?? bumdesTypeId ?? "",
+});
   const [amountText, setAmountText] = useState(initial?.amount ? String(initial.amount) : "");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -61,7 +67,13 @@ export function IncomeForm({
     const { nextErrors, amount } = validate(form, amountText);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
-    onSubmit({ ...form, amount, source: form.source.trim(), description: form.description.trim() });
+   onSubmit({
+  ...form,
+  bumdesTypeId: form.bumdesTypeId || bumdesTypeId || "",
+  amount,
+  source: form.source.trim(),
+  description: form.description.trim(),
+});
   }
 
   return (
@@ -77,16 +89,20 @@ export function IncomeForm({
         </Field>
         <Field label="Kategori" htmlFor="inc-cat" required error={errors.category}>
           <Select
-            id="inc-cat"
-            value={form.category}
-            onChange={(e) => setForm({ ...form, category: e.target.value })}
-          >
-            {INCOME_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </Select>
+  id="inc-cat"
+  value={form.category}
+  onChange={(e) =>
+    setForm({ ...form, category: e.target.value })
+  }
+>
+  <option value="">Pilih kategori</option>
+
+  {INCOME_CATEGORIES.map((cat) => (
+    <option key={cat} value={cat}>
+      {cat}
+    </option>
+  ))}
+</Select>
         </Field>
       </div>
       <Field label="Sumber Dana" htmlFor="inc-source" required error={errors.source}>

@@ -1,4 +1,6 @@
-import { Toaster as Sonner } from "sonner";
+import { Toaster as Sonner, toast } from "sonner";
+
+export { toast };
 
 export function Toaster() {
   return (
@@ -6,7 +8,8 @@ export function Toaster() {
       position="top-right"
       toastOptions={{
         classNames: {
-          toast: "font-sans rounded-xl border border-border shadow-[var(--shadow-card)]",
+          toast:
+            "font-sans rounded-xl border border-border shadow-[var(--shadow-card)]",
         },
       }}
     />

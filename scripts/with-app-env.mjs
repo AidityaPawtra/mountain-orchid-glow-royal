@@ -110,8 +110,18 @@ function main(argv) {
     console.error("usage: node scripts/with-app-env.mjs <command> [args…]");
     process.exit(2);
   }
-  const env = mergeAppEnv(readAppEnv(projectRoot()), process.env);
-  const child = spawn(command, args, { stdio: "inherit", env });
+ const env = mergeAppEnv(readAppEnv(projectRoot()), process.env);
+
+const executable =
+  process.platform === "win32" && command === "vite"
+    ? "vite.cmd"
+    : command;
+
+const child = spawn(executable, args, {
+  stdio: "inherit",
+  env,
+  shell: process.platform === "win32",
+});
   // The dev server is long-running and is stopped by signalling this wrapper.
   for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
     process.on(signal, () => child.kill(signal));

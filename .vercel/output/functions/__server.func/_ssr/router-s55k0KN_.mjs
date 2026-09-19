@@ -1584,8 +1584,8 @@ var Route$11 = createRootRoute({
 		links: [
 			{
 				rel: "icon",
-				type: "image/svg+xml",
-				href: "/favicon.svg"
+				type: "image/jpeg",
+				href: "/logo.jpg"
 			},
 			{
 				rel: "stylesheet",
@@ -1643,8 +1643,8 @@ var $$splitComponentImporter$5 = () => import("./laporan-BnbILnNm.mjs");
 var Route$5 = createFileRoute("/_app/laporan")({ component: lazyRouteComponent($$splitComponentImporter$5, "component") });
 var $$splitComponentImporter$4 = () => import("./peminjaman-CNQE_upo.mjs");
 var Route$4 = createFileRoute("/_app/peminjaman")({ component: lazyRouteComponent($$splitComponentImporter$4, "component") });
-var $$splitComponentImporter$3 = () => import("./pengaturan-BdO3J8XR.mjs");
-var Route$3 = createFileRoute("/_app/pengaturan")({ component: lazyRouteComponent($$splitComponentImporter$3, "component") });
+var $$splitComponentImporter$3 = () => import("./profil-lrDsSHtr.mjs");
+var Route$3 = createFileRoute("/_app/profil")({ component: lazyRouteComponent($$splitComponentImporter$3, "component") });
 var $$splitComponentImporter$2 = () => import("./uang-keluar-DW90pkmF.mjs");
 var Route$2 = createFileRoute("/_app/uang-keluar")({ component: lazyRouteComponent($$splitComponentImporter$2, "component") });
 var $$splitComponentImporter$1 = () => import("./uang-masuk-CYVKcEnD.mjs");
@@ -1685,9 +1685,9 @@ var AppPeminjamanRoute = Route$4.update({
 	path: "/peminjaman",
 	getParentRoute: () => AppRoute
 });
-var AppPengaturanRoute = Route$3.update({
-	id: "/pengaturan",
-	path: "/pengaturan",
+var AppProfileRoute = Route$3.update({
+	id: "/profile",
+	path: "/profile",
 	getParentRoute: () => AppRoute
 });
 var AppUangKeluarRoute = Route$2.update({
@@ -1710,7 +1710,7 @@ var AppRouteChildren = {
 	AppDashboardRoute,
 	AppLaporanRoute,
 	AppPeminjamanRoute: AppPeminjamanRoute._addFileChildren(AppPeminjamanRouteChildren),
-	AppPengaturanRoute,
+	AppProfileRoute,
 	AppUangKeluarRoute,
 	AppUangMasukRoute
 };

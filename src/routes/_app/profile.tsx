@@ -11,11 +11,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAppStore } from "@/lib/store";
 import type { AppSettings } from "@/lib/types";
 
-export const Route = createFileRoute("/_app/pengaturan")({
-  component: PengaturanPage,
+export const Route = createFileRoute("/_app/profile")({
+  component: ProfilPage,
 });
 
-function PengaturanPage() {
+function ProfilPage() {
   const settings = useAppStore((s) => s.settings);
   const saveSettings = useAppStore((s) => s.saveSettings);
   const restoreDemo = useAppStore((s) => s.restoreDemo);
@@ -44,13 +44,13 @@ function PengaturanPage() {
       adminUsername: form.adminUsername.trim(),
       adminEmail: form.adminEmail.trim(),
     });
-    toast.success("Perubahan pengaturan disimpan.");
+    toast.success("Perubahan profil disimpan.");
   }
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Pengaturan"
+        title="Profil"
         description="Kelola profil BUMDes dan akun administrator."
       />
 
@@ -143,7 +143,7 @@ function PengaturanPage() {
         open={resetOpen}
         onOpenChange={setResetOpen}
         title="Pulihkan data contoh?"
-        description="Semua transaksi, barang, dan peminjaman akan dikembalikan ke data awal. Pengaturan saat ini tidak diubah."
+        description="Semua transaksi, barang, dan peminjaman akan dikembalikan ke data awal. Profil saat ini tidak diubah."
         confirmLabel="Pulihkan"
         destructive
         onConfirm={() => {

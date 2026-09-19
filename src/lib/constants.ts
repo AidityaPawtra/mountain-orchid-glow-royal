@@ -4,8 +4,12 @@ export const STORAGE_KEYS = {
   session: "bumdes-wengkal:session",
   income: "bumdes-wengkal:income",
   expenses: "bumdes-wengkal:expenses",
+  bumdesTypes: "bumdes-wengkal:bumdes-types",
   items: "bumdes-wengkal:items",
   loans: "bumdes-wengkal:loans",
+  savingsLoans: "bumdes-wengkal:savings-loans",
+  savingsLoanPayments:
+    "bumdes-wengkal:savings-loan-payments",
   settings: "bumdes-wengkal:settings",
   notifications: "bumdes-wengkal:notifications",
 } as const;
@@ -37,7 +41,11 @@ export const ITEM_CATEGORIES = [
   "Lainnya",
 ] as const;
 
-export const ITEM_CONDITIONS = ["Baik", "Rusak Ringan", "Rusak Berat"] as const;
+export const ITEM_CONDITIONS = [
+  "Baik",
+  "Rusak Ringan",
+  "Rusak Berat",
+] as const;
 
 export const PAGE_SIZE = 8;
 

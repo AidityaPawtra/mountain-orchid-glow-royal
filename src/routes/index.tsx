@@ -8,6 +8,14 @@ export const Route = createFileRoute("/")({
 function Home() {
   const ready = useAppStore((s) => s.ready);
   const session = useAppStore((s) => s.session);
-  if (ready && session) return <Navigate to="/dashboard" />;
+
+  if (!ready) {
+    return null;
+  }
+
+  if (session) {
+    return <Navigate to="/dashboard" />;
+  }
+
   return <Navigate to="/login" />;
 }

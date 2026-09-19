@@ -26,7 +26,7 @@ var tsrStartManifest = () => ({ routes: {
 			"/_app/dashboard",
 			"/_app/laporan",
 			"/_app/peminjaman",
-			"/_app/pengaturan",
+			"/_app/profile",
 			"/_app/uang-keluar",
 			"/_app/uang-masuk"
 		],
@@ -113,11 +113,11 @@ var tsrStartManifest = () => ({ routes: {
 			"/assets/status-badge-DjBrbiLH.js"
 		]
 	},
-	"/_app/pengaturan": {
-		filePath: "/workspace/src/routes/_app/pengaturan.tsx",
+	"/_app/profile": {
+		filePath: "/workspace/src/routes/_app/profile.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/pengaturan-lrDsSHtr.js",
+			"/assets/profile-lrDsSHtr.js",
 			"/assets/dist-CyIgThTX.js",
 			"/assets/dist-D7ZXX1vY.js",
 			"/assets/field-GR4KoGlW.js",

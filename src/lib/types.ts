@@ -18,8 +18,27 @@ export type ProofFile = {
   dataUrl?: string;
 };
 
+/**
+ * Jenis / unit usaha BUMDes
+ */
+export type BumdesType = {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  status: "active" | "inactive";
+  createdAt: string;
+};
+
+/**
+ * PEMASUKAN
+ *
+ * Pemasukan tetap terhubung dengan
+ * unit / jenis BUMDes.
+ */
 export type IncomeRecord = {
   id: string;
+  bumdesTypeId: string;
   date: string;
   source: string;
   category: string;
@@ -29,8 +48,15 @@ export type IncomeRecord = {
   createdAt: string;
 };
 
+/**
+ * PENGELUARAN
+ *
+ * Pengeluaran tetap terhubung dengan
+ * unit / jenis BUMDes.
+ */
 export type ExpenseRecord = {
   id: string;
+  bumdesTypeId: string;
   date: string;
   category: string;
   purpose: string;
@@ -40,7 +66,10 @@ export type ExpenseRecord = {
   createdAt: string;
 };
 
-export type ItemCondition = "Baik" | "Rusak Ringan" | "Rusak Berat";
+export type ItemCondition =
+  | "Baik"
+  | "Rusak Ringan"
+  | "Rusak Berat";
 
 export type InventoryItem = {
   id: string;
@@ -51,7 +80,15 @@ export type InventoryItem = {
   condition: ItemCondition;
 };
 
-export type LoanStatus = "borrowed" | "returned" | "overdue";
+/**
+ * PEMINJAMAN BARANG
+ *
+ * Berbeda dengan Simpan Pinjam uang.
+ */
+export type LoanStatus =
+  | "borrowed"
+  | "returned"
+  | "overdue";
 
 export type LoanRecord = {
   id: string;
@@ -66,6 +103,53 @@ export type LoanRecord = {
   purpose: string;
   notes: string;
   status: LoanStatus;
+  createdAt: string;
+};
+
+/**
+ * SIMPAN PINJAM UANG
+ *
+ * BERDIRI SENDIRI.
+ *
+ * Tidak terhubung ke Jenis BUMDes,
+ * sehingga TIDAK memiliki bumdesTypeId.
+ */
+export type SavingsLoanStatus =
+  | "active"
+  | "paid"
+  | "overdue";
+
+export type SavingsLoanRecord = {
+  id: string;
+
+  borrowerName: string;
+  phone: string;
+  address: string;
+
+  loanDate: string;
+  dueDate: string;
+
+  loanAmount: number;
+  installmentAmount: number;
+  totalPaid: number;
+
+  purpose: string;
+  notes: string;
+
+  status: SavingsLoanStatus;
+  createdAt: string;
+};
+
+/**
+ * Riwayat pembayaran / angsuran
+ * untuk pinjaman uang BUMDes.
+ */
+export type SavingsLoanPayment = {
+  id: string;
+  savingsLoanId: string;
+  paymentDate: string;
+  amount: number;
+  notes: string;
   createdAt: string;
 };
 

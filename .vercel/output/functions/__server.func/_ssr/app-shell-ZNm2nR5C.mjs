@@ -46,9 +46,9 @@ var NAV = [
 		icon: FileText
 	},
 	{
-		to: "/pengaturan",
-		label: "Pengaturan",
-		icon: Settings
+		to: "/profile",
+		label: "Profile",
+		icon: Profile
 	}
 ];
 function isActivePath(pathname, to) {
@@ -355,12 +355,12 @@ function Topbar({ onToggleCollapse }) {
 					children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(DropdownMenuLabel, { children: "Akun" }),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DropdownMenuItem, {
-							onSelect: () => void navigate({ to: "/pengaturan" }),
+							onSelect: () => void navigate({ to: "/profil" }),
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(UserRound, { className: "size-4" }), "Profil"]
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DropdownMenuItem, {
-							onSelect: () => void navigate({ to: "/pengaturan" }),
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Settings, { className: "size-4" }), "Pengaturan"]
+							onSelect: () => void navigate({ to: "/profil" }),
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Settings, { className: "size-4" }), "Profil"]
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(DropdownMenuSeparator, {}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DropdownMenuItem, {

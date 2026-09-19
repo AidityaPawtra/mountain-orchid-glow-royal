@@ -29,7 +29,7 @@ the only thing anyone writes, and the pass writes all of it — dispatching, you
 - `src/lib/og/site.json` — not pre-seeded, created only if needed: `{ "title", "type"?: "x:game", "card"?: "custom", "color"?: "RRGGBB" }`; title defaults to the host slug.
 - `public/og.jpg` — custom 1200×630 card (optional; placeholder otherwise)
 - `public/x-banner.jpg` — games only: 50:11 (1200×264) X feed card
-- `public/favicon.svg` — linked from root `head()`; until the pass lands the tab just shows the browser default, which fails nothing
+- `public/logo.jpg` — linked from root `head()`; until the pass lands the tab just shows the browser default, which fails nothing
 
 **Extend `__root.tsx`; never replace it wholesale** (auth SSR, redesigns, skill excerpts): dropping the
 favicon link ships a blank tab icon no local check catches.
@@ -86,7 +86,7 @@ context every later turn while the subagent does the work anyway.
 
 **You are the pass?** Start at `references/brand-pass.md`, then read
 per asset you owe: `references/custom-card.md` for `public/og.jpg`, `references/x-banner.md` for the
-games-only `public/x-banner.jpg`, `references/favicon-and-icons.md` for `public/favicon.svg` plus the PWA
+games-only `public/x-banner.jpg`, `references/favicon-and-icons.md` for `public/logo.jpg` plus the PWA
 raster icons — those only when the user asked for installable/PWA, never invent a manifest. **Hand-author
 that SVG, never `imagine_text_to_image`**: it must stay crisp at 16px. Writing `site.json` for a game?
 `references/og-type-contract.md` argues the spellings X rejects.

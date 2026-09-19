@@ -12,8 +12,9 @@ import type { ExpenseRecord, ProofFile } from "@/lib/types";
 export type ExpenseFormValue = Omit<ExpenseRecord, "id" | "createdAt">;
 
 const EMPTY: ExpenseFormValue = {
-  date: todayISO(),
-  category: "Operasional",
+  bumdesTypeId: "",
+  date: "",
+  category: "",
   purpose: "",
   description: "",
   amount: 0,
@@ -25,14 +26,23 @@ export function ExpenseForm({
   submitLabel,
   onSubmit,
   onCancel,
+  bumdesTypeId,
 }: {
   initial?: ExpenseFormValue;
   submitLabel: string;
   onSubmit: (value: ExpenseFormValue) => void;
   onCancel: () => void;
+  bumdesTypeId?: string;
 }) {
-  const [form, setForm] = useState<ExpenseFormValue>(initial ?? EMPTY);
-  const [amountText, setAmountText] = useState(initial?.amount ? String(initial.amount) : "");
+  const [form, setForm] = useState<ExpenseFormValue>({
+    ...(initial ?? EMPTY),
+    bumdesTypeId: initial?.bumdesTypeId ?? bumdesTypeId ?? "",
+  });
+
+  const [amountText, setAmountText] = useState(
+    initial?.amount ? String(initial.amount) : "",
+  );
+
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   async function handleProof(file?: File) {
@@ -57,11 +67,12 @@ export function ExpenseForm({
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
     onSubmit({
-      ...form,
-      amount,
-      purpose: form.purpose.trim(),
-      description: form.description.trim(),
-    });
+  ...form,
+  bumdesTypeId: form.bumdesTypeId || bumdesTypeId || "",
+  amount,
+  purpose: form.purpose.trim(),
+  description: form.description.trim(),
+});
   }
 
   return (
@@ -77,16 +88,20 @@ export function ExpenseForm({
         </Field>
         <Field label="Kategori" htmlFor="exp-cat" required error={errors.category}>
           <Select
-            id="exp-cat"
-            value={form.category}
-            onChange={(e) => setForm({ ...form, category: e.target.value })}
-          >
-            {EXPENSE_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </Select>
+  id="exp-cat"
+  value={form.category}
+  onChange={(e) =>
+    setForm({ ...form, category: e.target.value })
+  }
+>
+  <option value="">Pilih kategori</option>
+
+  {EXPENSE_CATEGORIES.map((cat) => (
+    <option key={cat} value={cat}>
+      {cat}
+    </option>
+  ))}
+</Select>
         </Field>
       </div>
       <Field label="Keperluan" htmlFor="exp-purpose" required error={errors.purpose}>

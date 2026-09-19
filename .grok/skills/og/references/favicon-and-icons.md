@@ -1,6 +1,6 @@
 # Favicon and PWA icons
 
-## Favicon: hand-author `public/favicon.svg`
+## Logo BUMDes: hand-author `public/logo.jpg`
 
 Every app gets one, and it works in live preview immediately (no host needed).
 
@@ -21,7 +21,7 @@ Every app gets one, and it works in live preview immediately (no host needed).
 
   ```tsx
   links: [
-    { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+    { rel: "icon", type: "image/svg+xml", href: "/logo.jpg" },
     { rel: "stylesheet", href: appCss },
   ],
   ```
@@ -39,7 +39,7 @@ consistent:
 
 - `public/icon-192.png` and `public/icon-512.png` — the favicon's glyph on
   its tile, rasterized at size. Playwright (baked into the sandbox) can
-  screenshot the served `/favicon.svg` at a 192/512 viewport; or redraw the
+  screenshot the served `/logo.jpg` at a 192/512 viewport; or redraw the
   same mark as a flat PNG. Keep it bold and flat — no photographic detail.
 - A maskable variant (`"purpose": "maskable"`) needs the glyph inside the
   center ~80% safe zone so launcher shapes don't clip it.

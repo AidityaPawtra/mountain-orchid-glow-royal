@@ -8,23 +8,19 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
+import { Route as rootRouteImport } from './routes/__root.tsx'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AppRouteImport } from './routes/_app'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as AppBarangRouteImport } from './routes/_app/barang'
-import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
-import { Route as AppJenisBumdesRouteImport } from './routes/_app/jenis-bumdes'
-import { Route as AppLaporanRouteImport } from './routes/_app/laporan'
-import { Route as AppPeminjamanRouteImport } from './routes/_app/peminjaman'
-import { Route as AppProfileRouteImport } from './routes/_app/profile'
-import { Route as AppSimpanPinjamRouteImport } from './routes/_app/simpan-pinjam'
-import { Route as AppUangKeluarRouteImport } from './routes/_app/uang-keluar'
-import { Route as AppUangMasukRouteImport } from './routes/_app/uang-masuk'
-import { Route as AppJenisBumdesIndexRouteImport } from './routes/_app/jenis-bumdes.index'
-import { Route as AppJenisBumdesIdRouteImport } from './routes/_app/jenis-bumdes.$id'
-import { Route as AppPeminjamanIndexRouteImport } from './routes/_app/peminjaman.index'
-import { Route as AppPeminjamanIdRouteImport } from './routes/_app/peminjaman.$id'
+import { Route as AppRouteImport } from './routes/_app.tsx'
+import { Route as LoginRouteImport } from './routes/login.tsx'
+import { Route as AppBarangRouteImport } from './routes/_app/barang.tsx'
+import { Route as AppDashboardRouteImport } from './routes/_app/dashboard.tsx'
+import { Route as AppLaporanRouteImport } from './routes/_app/laporan.tsx'
+import { Route as AppPeminjamanRouteImport } from './routes/_app/peminjaman.tsx'
+import { Route as AppProfileRouteImport } from './routes/_app/profile.tsx'
+import { Route as AppUangKeluarRouteImport } from './routes/_app/uang-keluar.tsx'
+import { Route as AppUangMasukRouteImport } from './routes/_app/uang-masuk.tsx'
+import { Route as AppPeminjamanIndexRouteImport } from './routes/_app/peminjaman.index.tsx'
+import { Route as AppPeminjamanIdRouteImport } from './routes/_app/peminjaman.$id.tsx'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -50,11 +46,6 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
-const AppJenisBumdesRoute = AppJenisBumdesRouteImport.update({
-  id: '/jenis-bumdes',
-  path: '/jenis-bumdes',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppLaporanRoute = AppLaporanRouteImport.update({
   id: '/laporan',
   path: '/laporan',
@@ -70,11 +61,6 @@ const AppProfileRoute = AppProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AppRoute,
 } as any)
-const AppSimpanPinjamRoute = AppSimpanPinjamRouteImport.update({
-  id: '/simpan-pinjam',
-  path: '/simpan-pinjam',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppUangKeluarRoute = AppUangKeluarRouteImport.update({
   id: '/uang-keluar',
   path: '/uang-keluar',
@@ -84,16 +70,6 @@ const AppUangMasukRoute = AppUangMasukRouteImport.update({
   id: '/uang-masuk',
   path: '/uang-masuk',
   getParentRoute: () => AppRoute,
-} as any)
-const AppJenisBumdesIndexRoute = AppJenisBumdesIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AppJenisBumdesRoute,
-} as any)
-const AppJenisBumdesIdRoute = AppJenisBumdesIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AppJenisBumdesRoute,
 } as any)
 const AppPeminjamanIndexRoute = AppPeminjamanIndexRouteImport.update({
   id: '/',
@@ -111,16 +87,12 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/barang': typeof AppBarangRoute
   '/dashboard': typeof AppDashboardRoute
-  '/jenis-bumdes': typeof AppJenisBumdesRouteWithChildren
   '/laporan': typeof AppLaporanRoute
   '/peminjaman': typeof AppPeminjamanRouteWithChildren
   '/profile': typeof AppProfileRoute
-  '/simpan-pinjam': typeof AppSimpanPinjamRoute
   '/uang-keluar': typeof AppUangKeluarRoute
   '/uang-masuk': typeof AppUangMasukRoute
-  '/jenis-bumdes/$id': typeof AppJenisBumdesIdRoute
   '/peminjaman/$id': typeof AppPeminjamanIdRoute
-  '/jenis-bumdes/': typeof AppJenisBumdesIndexRoute
   '/peminjaman/': typeof AppPeminjamanIndexRoute
 }
 export interface FileRoutesByTo {
@@ -130,12 +102,9 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AppDashboardRoute
   '/laporan': typeof AppLaporanRoute
   '/profile': typeof AppProfileRoute
-  '/simpan-pinjam': typeof AppSimpanPinjamRoute
   '/uang-keluar': typeof AppUangKeluarRoute
   '/uang-masuk': typeof AppUangMasukRoute
-  '/jenis-bumdes/$id': typeof AppJenisBumdesIdRoute
   '/peminjaman/$id': typeof AppPeminjamanIdRoute
-  '/jenis-bumdes': typeof AppJenisBumdesIndexRoute
   '/peminjaman': typeof AppPeminjamanIndexRoute
 }
 export interface FileRoutesById {
@@ -145,16 +114,12 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_app/barang': typeof AppBarangRoute
   '/_app/dashboard': typeof AppDashboardRoute
-  '/_app/jenis-bumdes': typeof AppJenisBumdesRouteWithChildren
   '/_app/laporan': typeof AppLaporanRoute
   '/_app/peminjaman': typeof AppPeminjamanRouteWithChildren
   '/_app/profile': typeof AppProfileRoute
-  '/_app/simpan-pinjam': typeof AppSimpanPinjamRoute
   '/_app/uang-keluar': typeof AppUangKeluarRoute
   '/_app/uang-masuk': typeof AppUangMasukRoute
-  '/_app/jenis-bumdes/$id': typeof AppJenisBumdesIdRoute
   '/_app/peminjaman/$id': typeof AppPeminjamanIdRoute
-  '/_app/jenis-bumdes/': typeof AppJenisBumdesIndexRoute
   '/_app/peminjaman/': typeof AppPeminjamanIndexRoute
 }
 export interface FileRouteTypes {
@@ -164,16 +129,12 @@ export interface FileRouteTypes {
     | '/login'
     | '/barang'
     | '/dashboard'
-    | '/jenis-bumdes'
     | '/laporan'
     | '/peminjaman'
     | '/profile'
-    | '/simpan-pinjam'
     | '/uang-keluar'
     | '/uang-masuk'
-    | '/jenis-bumdes/$id'
     | '/peminjaman/$id'
-    | '/jenis-bumdes/'
     | '/peminjaman/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -183,12 +144,9 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/laporan'
     | '/profile'
-    | '/simpan-pinjam'
     | '/uang-keluar'
     | '/uang-masuk'
-    | '/jenis-bumdes/$id'
     | '/peminjaman/$id'
-    | '/jenis-bumdes'
     | '/peminjaman'
   id:
     | '__root__'
@@ -197,16 +155,12 @@ export interface FileRouteTypes {
     | '/login'
     | '/_app/barang'
     | '/_app/dashboard'
-    | '/_app/jenis-bumdes'
     | '/_app/laporan'
     | '/_app/peminjaman'
     | '/_app/profile'
-    | '/_app/simpan-pinjam'
     | '/_app/uang-keluar'
     | '/_app/uang-masuk'
-    | '/_app/jenis-bumdes/$id'
     | '/_app/peminjaman/$id'
-    | '/_app/jenis-bumdes/'
     | '/_app/peminjaman/'
   fileRoutesById: FileRoutesById
 }
@@ -253,13 +207,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/jenis-bumdes': {
-      id: '/_app/jenis-bumdes'
-      path: '/jenis-bumdes'
-      fullPath: '/jenis-bumdes'
-      preLoaderRoute: typeof AppJenisBumdesRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/laporan': {
       id: '/_app/laporan'
       path: '/laporan'
@@ -281,13 +228,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProfileRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/simpan-pinjam': {
-      id: '/_app/simpan-pinjam'
-      path: '/simpan-pinjam'
-      fullPath: '/simpan-pinjam'
-      preLoaderRoute: typeof AppSimpanPinjamRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/uang-keluar': {
       id: '/_app/uang-keluar'
       path: '/uang-keluar'
@@ -301,20 +241,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/uang-masuk'
       preLoaderRoute: typeof AppUangMasukRouteImport
       parentRoute: typeof AppRoute
-    }
-    '/_app/jenis-bumdes/': {
-      id: '/_app/jenis-bumdes/'
-      path: '/'
-      fullPath: '/jenis-bumdes/'
-      preLoaderRoute: typeof AppJenisBumdesIndexRouteImport
-      parentRoute: typeof AppJenisBumdesRoute
-    }
-    '/_app/jenis-bumdes/$id': {
-      id: '/_app/jenis-bumdes/$id'
-      path: '/$id'
-      fullPath: '/jenis-bumdes/$id'
-      preLoaderRoute: typeof AppJenisBumdesIdRouteImport
-      parentRoute: typeof AppJenisBumdesRoute
     }
     '/_app/peminjaman/': {
       id: '/_app/peminjaman/'
@@ -333,20 +259,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AppJenisBumdesRouteChildren {
-  AppJenisBumdesIdRoute: typeof AppJenisBumdesIdRoute
-  AppJenisBumdesIndexRoute: typeof AppJenisBumdesIndexRoute
-}
-
-const AppJenisBumdesRouteChildren: AppJenisBumdesRouteChildren = {
-  AppJenisBumdesIdRoute: AppJenisBumdesIdRoute,
-  AppJenisBumdesIndexRoute: AppJenisBumdesIndexRoute,
-}
-
-const AppJenisBumdesRouteWithChildren = AppJenisBumdesRoute._addFileChildren(
-  AppJenisBumdesRouteChildren,
-)
-
 interface AppPeminjamanRouteChildren {
   AppPeminjamanIdRoute: typeof AppPeminjamanIdRoute
   AppPeminjamanIndexRoute: typeof AppPeminjamanIndexRoute
@@ -364,11 +276,9 @@ const AppPeminjamanRouteWithChildren = AppPeminjamanRoute._addFileChildren(
 interface AppRouteChildren {
   AppBarangRoute: typeof AppBarangRoute
   AppDashboardRoute: typeof AppDashboardRoute
-  AppJenisBumdesRoute: typeof AppJenisBumdesRouteWithChildren
   AppLaporanRoute: typeof AppLaporanRoute
   AppPeminjamanRoute: typeof AppPeminjamanRouteWithChildren
   AppProfileRoute: typeof AppProfileRoute
-  AppSimpanPinjamRoute: typeof AppSimpanPinjamRoute
   AppUangKeluarRoute: typeof AppUangKeluarRoute
   AppUangMasukRoute: typeof AppUangMasukRoute
 }
@@ -376,11 +286,9 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppBarangRoute: AppBarangRoute,
   AppDashboardRoute: AppDashboardRoute,
-  AppJenisBumdesRoute: AppJenisBumdesRouteWithChildren,
   AppLaporanRoute: AppLaporanRoute,
   AppPeminjamanRoute: AppPeminjamanRouteWithChildren,
   AppProfileRoute: AppProfileRoute,
-  AppSimpanPinjamRoute: AppSimpanPinjamRoute,
   AppUangKeluarRoute: AppUangKeluarRoute,
   AppUangMasukRoute: AppUangMasukRoute,
 }
