@@ -1,64 +1,81 @@
 <?php
 
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BumdesTypeController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\IncomeController;
+use App\Http\Controllers\InventoryItemController;
+use App\Http\Controllers\LoanController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SavingsLoanController;
+use App\Http\Controllers\SettingController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
 });
 
-Route::get('/login', function () {
-    return Inertia::render('Login');
-})->name('login');
+// Autentikasi
+Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->name('dashboard');
+// Dashboard
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-Route::get('/uang-masuk', function () {
-    return Inertia::render('UangMasuk');
-})->name('uang-masuk');
+// Keuangan: Pemasukan
+Route::get('/uang-masuk', [IncomeController::class, 'index'])->name('uang-masuk');
+Route::post('/uang-masuk', [IncomeController::class, 'store'])->name('uang-masuk.store');
+Route::put('/uang-masuk/{id}', [IncomeController::class, 'update'])->name('uang-masuk.update');
+Route::delete('/uang-masuk/{id}', [IncomeController::class, 'destroy'])->name('uang-masuk.destroy');
 
-Route::get('/uang-keluar', function () {
-    return Inertia::render('UangKeluar');
-})->name('uang-keluar');
+// Keuangan: Pengeluaran
+Route::get('/uang-keluar', [ExpenseController::class, 'index'])->name('uang-keluar');
+Route::post('/uang-keluar', [ExpenseController::class, 'store'])->name('uang-keluar.store');
+Route::put('/uang-keluar/{id}', [ExpenseController::class, 'update'])->name('uang-keluar.update');
+Route::delete('/uang-keluar/{id}', [ExpenseController::class, 'destroy'])->name('uang-keluar.destroy');
 
-Route::get('/barang', function () {
-    return Inertia::render('Barang');
-})->name('barang');
+// Barang Inventaris
+Route::get('/barang', [InventoryItemController::class, 'index'])->name('barang');
+Route::post('/barang', [InventoryItemController::class, 'store'])->name('barang.store');
+Route::put('/barang/{id}', [InventoryItemController::class, 'update'])->name('barang.update');
+Route::delete('/barang/{id}', [InventoryItemController::class, 'destroy'])->name('barang.destroy');
 
-Route::get('/peminjaman', function () {
-    return Inertia::render('Peminjaman/Index');
-})->name('peminjaman.index');
+// Peminjaman Barang
+Route::get('/peminjaman', [LoanController::class, 'index'])->name('peminjaman.index');
+Route::post('/peminjaman', [LoanController::class, 'store'])->name('peminjaman.store');
+Route::get('/peminjaman/{id}', [LoanController::class, 'show'])->name('peminjaman.show');
+Route::put('/peminjaman/{id}', [LoanController::class, 'update'])->name('peminjaman.update');
+Route::post('/peminjaman/{id}/return', [LoanController::class, 'returnLoan'])->name('peminjaman.return');
+Route::delete('/peminjaman/{id}', [LoanController::class, 'destroy'])->name('peminjaman.destroy');
 
-Route::get('/peminjaman/{id}', function (string $id) {
-    return Inertia::render('Peminjaman/Show', [
-        'id' => $id,
-    ]);
-})->name('peminjaman.show');
+// Unit / Jenis Usaha BUMDes
+Route::get('/jenis-bumdes', [BumdesTypeController::class, 'index'])->name('jenis-bumdes.index');
+Route::post('/jenis-bumdes', [BumdesTypeController::class, 'store'])->name('jenis-bumdes.store');
+Route::get('/jenis-bumdes/{id}', [BumdesTypeController::class, 'show'])->name('jenis-bumdes.show');
+Route::put('/jenis-bumdes/{id}', [BumdesTypeController::class, 'update'])->name('jenis-bumdes.update');
+Route::delete('/jenis-bumdes/{id}', [BumdesTypeController::class, 'destroy'])->name('jenis-bumdes.destroy');
 
-Route::get('/jenis-bumdes', function () {
-    return Inertia::render('JenisBumdes/Index');
-})->name('jenis-bumdes.index');
+// Simpan Pinjam Uang
+Route::get('/simpan-pinjam', [SavingsLoanController::class, 'index'])->name('simpan-pinjam');
+Route::post('/simpan-pinjam', [SavingsLoanController::class, 'store'])->name('simpan-pinjam.store');
+Route::put('/simpan-pinjam/{id}', [SavingsLoanController::class, 'update'])->name('simpan-pinjam.update');
+Route::post('/simpan-pinjam/{id}/payment', [SavingsLoanController::class, 'addPayment'])->name('simpan-pinjam.payment');
+Route::delete('/simpan-pinjam/{id}', [SavingsLoanController::class, 'destroy'])->name('simpan-pinjam.destroy');
 
-Route::get('/jenis-bumdes/{id}', function (string $id) {
-    return Inertia::render('JenisBumdes/Show', [
-        'id' => $id,
-    ]);
-})->name('jenis-bumdes.show');
+// Laporan
+Route::get('/laporan', [ReportController::class, 'index'])->name('laporan');
 
-Route::get('/simpan-pinjam', function () {
-    return Inertia::render('SimpanPinjam');
-})->name('simpan-pinjam');
-
-Route::get('/laporan', function () {
-    return Inertia::render('Laporan');
-})->name('laporan');
-
-Route::get('/profile', function () {
-    return Inertia::render('Profile');
-})->name('profile');
-
+// Profil & Pengaturan
+Route::get('/profile', [SettingController::class, 'index'])->name('profile');
+Route::post('/profile', [SettingController::class, 'update'])->name('profile.update');
 Route::get('/pengaturan', function () {
     return redirect()->route('profile');
 })->name('pengaturan');

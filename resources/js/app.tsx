@@ -19,7 +19,7 @@ createInertiaApp({
   setup({ el, App, props }) {
     const root = createRoot(el);
     root.render(
-      <StoreHydrator>
+      <StoreHydrator initialData={(props.initialPage.props as any)?.initialData}>
         <App {...props} />
         <Toaster />
       </StoreHydrator>
