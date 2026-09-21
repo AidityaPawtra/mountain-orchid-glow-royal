@@ -13,6 +13,12 @@ import {
 import { resolveLoanStatus } from "@/lib/finance";
 import { uid } from "@/lib/utils";
 
+import {
+  createExpense,
+  createIncome,
+  fetchBootstrap,
+} from "@/lib/api-client";
+
 import type {
   AppNotification,
   AppSettings,
@@ -21,6 +27,7 @@ import type {
   IncomeRecord,
   InventoryItem,
   LoanRecord,
+  ProofFile,
   SavingsLoanPayment,
   SavingsLoanRecord,
   Session,
@@ -76,12 +83,18 @@ type AppStore = {
   // ====================================================
 
   addIncome: (
-    payload: Omit<IncomeRecord, "id" | "createdAt">,
+    payload: Omit<
+      IncomeRecord,
+      "id" | "createdAt"
+    >,
   ) => void;
 
   updateIncome: (
     id: string,
-    payload: Omit<IncomeRecord, "id" | "createdAt">,
+    payload: Omit<
+      IncomeRecord,
+      "id" | "createdAt"
+    >,
   ) => void;
 
   deleteIncome: (id: string) => void;
@@ -91,12 +104,18 @@ type AppStore = {
   // ====================================================
 
   addExpense: (
-    payload: Omit<ExpenseRecord, "id" | "createdAt">,
+    payload: Omit<
+      ExpenseRecord,
+      "id" | "createdAt"
+    >,
   ) => void;
 
   updateExpense: (
     id: string,
-    payload: Omit<ExpenseRecord, "id" | "createdAt">,
+    payload: Omit<
+      ExpenseRecord,
+      "id" | "createdAt"
+    >,
   ) => void;
 
   deleteExpense: (id: string) => void;
@@ -106,12 +125,18 @@ type AppStore = {
   // ====================================================
 
   addBumdesType: (
-    payload: Omit<BumdesType, "id" | "createdAt">,
+    payload: Omit<
+      BumdesType,
+      "id" | "createdAt"
+    >,
   ) => void;
 
   updateBumdesType: (
     id: string,
-    payload: Omit<BumdesType, "id" | "createdAt">,
+    payload: Omit<
+      BumdesType,
+      "id" | "createdAt"
+    >,
   ) => void;
 
   deleteBumdesType: (id: string) => void;
@@ -121,14 +146,20 @@ type AppStore = {
   // ====================================================
 
   addItem: (
-    payload: Omit<InventoryItem, "id" | "borrowed"> & {
+    payload: Omit<
+      InventoryItem,
+      "id" | "borrowed"
+    > & {
       borrowed?: number;
     },
   ) => void;
 
   updateItem: (
     id: string,
-    payload: Omit<InventoryItem, "id">,
+    payload: Omit<
+      InventoryItem,
+      "id"
+    >,
   ) => void;
 
   deleteItem: (
@@ -195,7 +226,9 @@ type AppStore = {
     >,
   ) => void;
 
-  deleteSavingsLoan: (id: string) => void;
+  deleteSavingsLoan: (
+    id: string,
+  ) => void;
 
   addSavingsLoanPayment: (
     savingsLoanId: string,
@@ -231,6 +264,556 @@ type AppStore = {
 
   restoreDemo: () => void;
 };
+
+// ======================================================
+// HELPER API MAPPER
+// ======================================================
+
+function asRecord(
+  value: unknown,
+): Record<string, unknown> {
+  if (
+    typeof value === "object" &&
+    value !== null
+  ) {
+    return value as Record<string, unknown>;
+  }
+
+  return {};
+}
+
+function asString(
+  value: unknown,
+  fallback = "",
+): string {
+  return typeof value === "string"
+    ? value
+    : fallback;
+}
+
+function asNumber(
+  value: unknown,
+  fallback = 0,
+): number {
+  const numberValue =
+    typeof value === "number"
+      ? value
+      : Number(value);
+
+  return Number.isFinite(numberValue)
+    ? numberValue
+    : fallback;
+}
+
+function normalizeProof(
+  value: unknown,
+): ProofFile | null {
+  if (!value) {
+    return null;
+  }
+
+  let parsed: unknown = value;
+
+  if (typeof value === "string") {
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      return {
+        name: value,
+      };
+    }
+  }
+
+  const record = asRecord(parsed);
+
+  const name = asString(
+    record.name,
+    "Bukti transaksi",
+  );
+
+  const dataUrl = asString(
+    record.dataUrl,
+  );
+
+  return {
+    name,
+    ...(dataUrl ? { dataUrl } : {}),
+  };
+}
+
+function mapIncome(
+  value: unknown,
+): IncomeRecord {
+  const row = asRecord(value);
+
+  return {
+    id: asString(
+      row.id,
+      uid("inc"),
+    ),
+
+    bumdesTypeId: asString(
+      row.bumdesTypeId ??
+        row.bumdes_type_id,
+    ),
+
+    date: asString(row.date),
+
+    source: asString(
+      row.source,
+    ),
+
+    category: asString(
+      row.category,
+    ),
+
+    description: asString(
+      row.description,
+    ),
+
+    amount: asNumber(
+      row.amount,
+    ),
+
+    proof: normalizeProof(
+      row.proof,
+    ),
+
+    createdAt: asString(
+      row.createdAt ??
+        row.created_at,
+      new Date().toISOString(),
+    ),
+  };
+}
+
+function mapExpense(
+  value: unknown,
+): ExpenseRecord {
+  const row = asRecord(value);
+
+  return {
+    id: asString(
+      row.id,
+      uid("exp"),
+    ),
+
+    bumdesTypeId: asString(
+      row.bumdesTypeId ??
+        row.bumdes_type_id,
+    ),
+
+    date: asString(
+      row.date,
+    ),
+
+    category: asString(
+      row.category,
+    ),
+
+    purpose: asString(
+      row.purpose,
+    ),
+
+    description: asString(
+      row.description,
+    ),
+
+    amount: asNumber(
+      row.amount,
+    ),
+
+    proof: normalizeProof(
+      row.proof,
+    ),
+
+    createdAt: asString(
+      row.createdAt ??
+        row.created_at,
+      new Date().toISOString(),
+    ),
+  };
+}
+
+function mapBumdesType(
+  value: unknown,
+): BumdesType {
+  const row = asRecord(value);
+
+  return {
+    id: asString(
+      row.id,
+      uid("bumdes"),
+    ),
+
+    name: asString(
+      row.name,
+    ),
+
+    category:
+      asString(row.category) ||
+      asString(row.type) ||
+      "Lainnya",
+
+    description: asString(
+      row.description,
+    ),
+
+    status:
+      row.status === "inactive"
+        ? "inactive"
+        : "active",
+
+    createdAt: asString(
+      row.createdAt ??
+        row.created_at,
+      new Date().toISOString(),
+    ),
+  };
+}
+
+function mapItem(
+  value: unknown,
+): InventoryItem {
+  const row = asRecord(value);
+
+  return {
+    id: asString(
+      row.id,
+      uid("item"),
+    ),
+
+    name: asString(
+      row.name,
+    ),
+
+    category: asString(
+      row.category,
+    ),
+
+    quantity: asNumber(
+      row.quantity,
+    ),
+
+    borrowed: asNumber(
+      row.borrowed,
+    ),
+
+    condition:
+      row.condition ===
+        "Rusak Ringan" ||
+      row.condition ===
+        "Rusak Berat"
+        ? row.condition
+        : "Baik",
+  };
+}
+
+function mapLoan(
+  value: unknown,
+): LoanRecord {
+  const row = asRecord(value);
+
+  const mapped: LoanRecord = {
+    id: asString(
+      row.id,
+      uid("loan"),
+    ),
+
+    borrowerName: asString(
+      row.borrowerName ??
+        row.borrower_name,
+    ),
+
+    phone: asString(
+      row.phone,
+    ),
+
+    itemId: asString(
+      row.itemId ??
+        row.item_id,
+    ),
+
+    itemName: asString(
+      row.itemName ??
+        row.item_name,
+    ),
+
+    quantity: asNumber(
+      row.quantity,
+    ),
+
+    borrowDate: asString(
+      row.borrowDate ??
+        row.borrow_date,
+    ),
+
+    returnDate: asString(
+      row.returnDate ??
+        row.return_date,
+    ),
+
+    actualReturnDate:
+      asString(
+        row.actualReturnDate ??
+          row.actual_return_date,
+      ) || null,
+
+    purpose: asString(
+      row.purpose,
+    ),
+
+    notes: asString(
+      row.notes,
+    ),
+
+    status:
+      row.status === "returned"
+        ? "returned"
+        : row.status === "overdue"
+          ? "overdue"
+          : "borrowed",
+
+    createdAt: asString(
+      row.createdAt ??
+        row.created_at,
+      new Date().toISOString(),
+    ),
+  };
+
+  return {
+    ...mapped,
+
+    status:
+      resolveLoanStatus(
+        mapped,
+      ),
+  };
+}
+
+function mapSavingsLoan(
+  value: unknown,
+): SavingsLoanRecord {
+  const row = asRecord(value);
+
+  const totalPaid = asNumber(
+    row.totalPaid ??
+      row.total_paid,
+  );
+
+  const loanAmount = asNumber(
+    row.loanAmount ??
+      row.loan_amount,
+  );
+
+  let status:
+    SavingsLoanRecord["status"];
+
+  if (
+    row.status === "paid" ||
+    totalPaid >= loanAmount
+  ) {
+    status = "paid";
+  } else if (
+    row.status === "overdue"
+  ) {
+    status = "overdue";
+  } else {
+    status = "active";
+  }
+
+  return {
+    id: asString(
+      row.id,
+      uid("savings-loan"),
+    ),
+
+    borrowerName: asString(
+      row.borrowerName ??
+        row.borrower_name,
+    ),
+
+    phone: asString(
+      row.phone,
+    ),
+
+    address: asString(
+      row.address,
+    ),
+
+    loanDate: asString(
+      row.loanDate ??
+        row.loan_date,
+    ),
+
+    dueDate: asString(
+      row.dueDate ??
+        row.due_date,
+    ),
+
+    loanAmount,
+
+    installmentAmount:
+      asNumber(
+        row.installmentAmount ??
+          row.installment_amount,
+      ),
+
+    totalPaid,
+
+    purpose: asString(
+      row.purpose,
+    ),
+
+    notes: asString(
+      row.notes,
+    ),
+
+    status,
+
+    createdAt: asString(
+      row.createdAt ??
+        row.created_at,
+      new Date().toISOString(),
+    ),
+  };
+}
+
+function mapSavingsLoanPayment(
+  value: unknown,
+): SavingsLoanPayment {
+  const row = asRecord(value);
+
+  return {
+    id: asString(
+      row.id,
+      uid("savings-payment"),
+    ),
+
+    savingsLoanId: asString(
+      row.savingsLoanId ??
+        row.savings_loan_id,
+    ),
+
+    paymentDate: asString(
+      row.paymentDate ??
+        row.payment_date,
+    ),
+
+    amount: asNumber(
+      row.amount,
+    ),
+
+    notes: asString(
+      row.notes,
+    ),
+
+    createdAt: asString(
+      row.createdAt ??
+        row.created_at,
+      new Date().toISOString(),
+    ),
+  };
+}
+
+function mapSettings(
+  value: unknown,
+): AppSettings | null {
+  if (!value) {
+    return null;
+  }
+
+  const row = asRecord(value);
+
+  return {
+    bumdesName:
+      asString(
+        row.bumdesName ??
+          row.bumdes_name,
+      ) ||
+      defaultSettings.bumdesName,
+
+    villageName:
+      asString(
+        row.villageName ??
+          row.village_name,
+      ) ||
+      defaultSettings.villageName,
+
+    address:
+      asString(
+        row.address,
+      ) ||
+      defaultSettings.address,
+
+    phone:
+      asString(
+        row.phone,
+      ) ||
+      defaultSettings.phone,
+
+    email:
+      asString(
+        row.email,
+      ) ||
+      defaultSettings.email,
+
+    adminName:
+      asString(
+        row.adminName ??
+          row.admin_name,
+      ) ||
+      defaultSettings.adminName,
+
+    adminUsername:
+      asString(
+        row.adminUsername ??
+          row.admin_username,
+      ) ||
+      defaultSettings.adminUsername,
+
+    adminEmail:
+      asString(
+        row.adminEmail ??
+          row.admin_email,
+      ) ||
+      defaultSettings.adminEmail,
+  };
+}
+
+function mapNotification(
+  value: unknown,
+): AppNotification {
+  const row = asRecord(value);
+
+  return {
+    id: asString(
+      row.id,
+      uid("notification"),
+    ),
+
+    title: asString(
+      row.title,
+    ),
+
+    body: asString(
+      row.body,
+    ),
+
+    time: asString(
+      row.time,
+    ),
+
+    read:
+      row.read === true ||
+      row.read === 1,
+
+    href:
+      asString(
+        row.href,
+      ) || undefined,
+  };
+}
 
 // ======================================================
 // PERSIST DATA
@@ -335,7 +918,8 @@ export const useAppStore =
 
       savingsLoanPayments: [],
 
-      settings: defaultSettings,
+      settings:
+        defaultSettings,
 
       notifications: [],
 
@@ -346,11 +930,12 @@ export const useAppStore =
       hydrate: () => {
         seedIfNeeded();
 
-        const loans =
+        const localLoans =
           storageApi
             .loans()
             .map((loan) => ({
               ...loan,
+
               status:
                 resolveLoanStatus(
                   loan,
@@ -358,10 +943,10 @@ export const useAppStore =
             }));
 
         storageApi.saveLoans(
-          loans,
+          localLoans,
         );
 
-        set({
+        const localState = {
           ready: true,
 
           session:
@@ -382,7 +967,8 @@ export const useAppStore =
           items:
             storageApi.items(),
 
-          loans,
+          loans:
+            localLoans,
 
           savingsLoans:
             storageApi.savingsLoans(),
@@ -395,7 +981,183 @@ export const useAppStore =
 
           notifications:
             storageApi.notifications(),
-        });
+        };
+
+        set(localState);
+
+        // ==================================================
+        // SYNC BACKEND
+        // ==================================================
+
+        void (async () => {
+          try {
+            const bootstrap =
+              await fetchBootstrap();
+
+            const local = get();
+
+            const remoteIncome =
+              Array.isArray(
+                bootstrap.income,
+              )
+                ? bootstrap.income.map(
+                    mapIncome,
+                  )
+                : [];
+
+            const remoteExpenses =
+              Array.isArray(
+                bootstrap.expenses,
+              )
+                ? bootstrap.expenses.map(
+                    mapExpense,
+                  )
+                : [];
+
+            const remoteBumdesTypes =
+              Array.isArray(
+                bootstrap.bumdesTypes,
+              )
+                ? bootstrap.bumdesTypes.map(
+                    mapBumdesType,
+                  )
+                : [];
+
+            const remoteItems =
+              Array.isArray(
+                bootstrap.items,
+              )
+                ? bootstrap.items.map(
+                    mapItem,
+                  )
+                : [];
+
+            const remoteLoans =
+              Array.isArray(
+                bootstrap.loans,
+              )
+                ? bootstrap.loans.map(
+                    mapLoan,
+                  )
+                : [];
+
+            const remoteSavingsLoans =
+              Array.isArray(
+                bootstrap.savingsLoans,
+              )
+                ? bootstrap.savingsLoans.map(
+                    mapSavingsLoan,
+                  )
+                : [];
+
+            const remotePayments =
+              Array.isArray(
+                bootstrap.savingsLoanPayments,
+              )
+                ? bootstrap.savingsLoanPayments.map(
+                    mapSavingsLoanPayment,
+                  )
+                : [];
+
+            const remoteNotifications =
+              Array.isArray(
+                bootstrap.notifications,
+              )
+                ? bootstrap.notifications.map(
+                    mapNotification,
+                  )
+                : [];
+
+            const remoteSettings =
+              mapSettings(
+                bootstrap.settings,
+              );
+
+            /*
+             * TRANSISI AMAN
+             *
+             * Kalau database Laravel masih kosong,
+             * data LocalStorage tetap dipakai.
+             *
+             * Begitu database Laravel sudah mempunyai
+             * data, data tersebut menjadi sumber utama
+             * untuk modul terkait.
+             */
+
+            const income =
+              remoteIncome.length
+                ? remoteIncome
+                : local.income;
+
+            const expenses =
+              remoteExpenses.length
+                ? remoteExpenses
+                : local.expenses;
+
+            const bumdesTypes =
+              remoteBumdesTypes.length
+                ? remoteBumdesTypes
+                : local.bumdesTypes;
+
+            const items =
+              remoteItems.length
+                ? remoteItems
+                : local.items;
+
+            const loans =
+              remoteLoans.length
+                ? remoteLoans
+                : local.loans;
+
+            const savingsLoans =
+              remoteSavingsLoans.length
+                ? remoteSavingsLoans
+                : local.savingsLoans;
+
+            const savingsLoanPayments =
+              remotePayments.length
+                ? remotePayments
+                : local.savingsLoanPayments;
+
+            const notifications =
+              remoteNotifications.length
+                ? remoteNotifications
+                : local.notifications;
+
+            const settings =
+              remoteSettings ??
+              local.settings;
+
+            persist({
+              income,
+              expenses,
+              bumdesTypes,
+              items,
+              loans,
+              savingsLoans,
+              savingsLoanPayments,
+              settings,
+              notifications,
+            });
+
+            set({
+              income,
+              expenses,
+              bumdesTypes,
+              items,
+              loans,
+              savingsLoans,
+              savingsLoanPayments,
+              settings,
+              notifications,
+            });
+          } catch (error) {
+            console.warn(
+              "[BUMDes] Backend sync gagal. LocalStorage tetap digunakan.",
+              error,
+            );
+          }
+        })();
       },
 
       // ==================================================
@@ -411,10 +1173,25 @@ export const useAppStore =
             .trim()
             .toLowerCase();
 
+        /*
+         * PENTING:
+         * Selalu ambil users terbaru dari
+         * LocalStorage.
+         *
+         * Password reset mengubah data users
+         * di LocalStorage. Zustand tidak otomatis
+         * mengetahui perubahan tersebut.
+         */
         const users =
-          get().users.length
-            ? get().users
-            : storageApi.users();
+          storageApi.users();
+
+        /*
+         * Sinkronkan users terbaru ke Zustand
+         * supaya state users juga ikut berubah.
+         */
+        set({
+          users,
+        });
 
         const user =
           users.find(
@@ -440,11 +1217,15 @@ export const useAppStore =
 
         const session: Session =
           {
-            userId: user.id,
+            userId:
+              user.id,
+
             username:
               user.username,
+
             name:
               user.name,
+
             email:
               user.email,
           };
@@ -483,7 +1264,8 @@ export const useAppStore =
       addIncome: (
         payload,
       ) => {
-        const row: IncomeRecord =
+        const localRow:
+          IncomeRecord =
           {
             ...payload,
 
@@ -493,18 +1275,79 @@ export const useAppStore =
               new Date().toISOString(),
           };
 
-        const income = [
-          row,
+        const nextIncome = [
+          localRow,
           ...get().income,
         ];
 
         persist({
-          income,
+          income:
+            nextIncome,
         });
 
         set({
-          income,
+          income:
+            nextIncome,
         });
+
+        void createIncome({
+          bumdesTypeId:
+            payload.bumdesTypeId ||
+            undefined,
+
+          date:
+            payload.date,
+
+          source:
+            payload.source,
+
+          category:
+            payload.category,
+
+          description:
+            payload.description,
+
+          amount:
+            payload.amount,
+
+          proof:
+            payload.proof ?? null,
+        })
+          .then(
+            (response) => {
+              const serverRecord =
+                mapIncome(
+                  response.data,
+                );
+
+              const syncedIncome =
+                get().income.map(
+                  (row) =>
+                    row.id ===
+                    localRow.id
+                      ? serverRecord
+                      : row,
+                );
+
+              persist({
+                income:
+                  syncedIncome,
+              });
+
+              set({
+                income:
+                  syncedIncome,
+              });
+            },
+          )
+          .catch(
+            (error) => {
+              console.error(
+                "[BUMDes] Gagal menyimpan pemasukan ke Laravel:",
+                error,
+              );
+            },
+          );
       },
 
       updateIncome: (
@@ -556,7 +1399,8 @@ export const useAppStore =
       addExpense: (
         payload,
       ) => {
-        const row: ExpenseRecord =
+        const localRow:
+          ExpenseRecord =
           {
             ...payload,
 
@@ -566,18 +1410,79 @@ export const useAppStore =
               new Date().toISOString(),
           };
 
-        const expenses = [
-          row,
+        const nextExpenses = [
+          localRow,
           ...get().expenses,
         ];
 
         persist({
-          expenses,
+          expenses:
+            nextExpenses,
         });
 
         set({
-          expenses,
+          expenses:
+            nextExpenses,
         });
+
+        void createExpense({
+          bumdesTypeId:
+            payload.bumdesTypeId ||
+            undefined,
+
+          date:
+            payload.date,
+
+          category:
+            payload.category,
+
+          purpose:
+            payload.purpose,
+
+          description:
+            payload.description,
+
+          amount:
+            payload.amount,
+
+          proof:
+            payload.proof ?? null,
+        })
+          .then(
+            (response) => {
+              const serverRecord =
+                mapExpense(
+                  response.data,
+                );
+
+              const syncedExpenses =
+                get().expenses.map(
+                  (row) =>
+                    row.id ===
+                    localRow.id
+                      ? serverRecord
+                      : row,
+                );
+
+              persist({
+                expenses:
+                  syncedExpenses,
+              });
+
+              set({
+                expenses:
+                  syncedExpenses,
+              });
+            },
+          )
+          .catch(
+            (error) => {
+              console.error(
+                "[BUMDes] Gagal menyimpan pengeluaran ke Laravel:",
+                error,
+              );
+            },
+          );
       },
 
       updateExpense: (
@@ -629,7 +1534,8 @@ export const useAppStore =
       addBumdesType: (
         payload,
       ) => {
-        const bumdesType: BumdesType =
+        const bumdesType:
+          BumdesType =
           {
             ...payload,
 
@@ -702,7 +1608,8 @@ export const useAppStore =
       addItem: (
         payload,
       ) => {
-        const item: InventoryItem =
+        const item:
+          InventoryItem =
           {
             id: uid("item"),
 
@@ -871,7 +1778,8 @@ export const useAppStore =
           };
         }
 
-        const loan: LoanRecord =
+        const loan:
+          LoanRecord =
           {
             ...payload,
 
@@ -881,19 +1789,22 @@ export const useAppStore =
               item.name,
 
             status:
-              resolveLoanStatus({
-                ...payload,
+              resolveLoanStatus(
+                {
+                  ...payload,
 
-                id: "tmp",
+                  id: "tmp",
 
-                itemName:
-                  item.name,
+                  itemName:
+                    item.name,
 
-                status:
-                  "borrowed",
+                  status:
+                    "borrowed",
 
-                createdAt: "",
-              }),
+                  createdAt:
+                    "",
+                },
+              ),
 
             createdAt:
               new Date().toISOString(),
@@ -1069,14 +1980,16 @@ export const useAppStore =
                       nextItem.name,
 
                     status:
-                      resolveLoanStatus({
-                        ...row,
+                      resolveLoanStatus(
+                        {
+                          ...row,
 
-                        ...payload,
+                          ...payload,
 
-                        itemName:
-                          nextItem.name,
-                      }),
+                          itemName:
+                            nextItem.name,
+                        },
+                      ),
                   }
                 : row,
           );
@@ -1229,7 +2142,8 @@ export const useAppStore =
       addSavingsLoan: (
         payload,
       ) => {
-        const record: SavingsLoanRecord =
+        const record:
+          SavingsLoanRecord =
           {
             ...payload,
 
@@ -1362,7 +2276,8 @@ export const useAppStore =
           };
         }
 
-        const payment: SavingsLoanPayment =
+        const payment:
+          SavingsLoanPayment =
           {
             ...payload,
 
@@ -1376,17 +2291,9 @@ export const useAppStore =
               new Date().toISOString(),
           };
 
-        // ================================================
-        // HITUNG TOTAL PEMBAYARAN BARU
-        // ================================================
-
         const totalPaid =
           loan.totalPaid +
           payload.amount;
-
-        // ================================================
-        // TENTUKAN STATUS PINJAMAN
-        // ================================================
 
         const status:
           SavingsLoanRecord["status"] =
@@ -1394,10 +2301,6 @@ export const useAppStore =
           loan.loanAmount
             ? "paid"
             : "active";
-
-        // ================================================
-        // UPDATE DATA PINJAMAN
-        // ================================================
 
         const savingsLoans:
           SavingsLoanRecord[] =
@@ -1415,28 +2318,17 @@ export const useAppStore =
                 : row,
           );
 
-        // ================================================
-        // TAMBAHKAN RIWAYAT PEMBAYARAN
-        // ================================================
-
-        const savingsLoanPayments = [
-          payment,
-          ...get()
-            .savingsLoanPayments,
-        ];
-
-        // ================================================
-        // SIMPAN KE LOCAL STORAGE
-        // ================================================
+        const savingsLoanPayments =
+          [
+            payment,
+            ...get()
+              .savingsLoanPayments,
+          ];
 
         persist({
           savingsLoans,
           savingsLoanPayments,
         });
-
-        // ================================================
-        // UPDATE ZUSTAND STATE
-        // ================================================
 
         set({
           savingsLoans,
@@ -1455,8 +2347,19 @@ export const useAppStore =
       saveSettings: (
         payload,
       ) => {
+        /*
+         * Ambil users langsung dari LocalStorage,
+         * bukan dari state Zustand.
+         *
+         * Ini mencegah password terbaru
+         * tertimpa password lama ketika
+         * pengaturan profil disimpan.
+         */
+        const currentUsers =
+          storageApi.users();
+
         const users =
-          get().users.map(
+          currentUsers.map(
             (user) =>
               user.username ===
               DEMO_CREDENTIALS.username
@@ -1488,10 +2391,13 @@ export const useAppStore =
           get().session
             ? {
                 ...get().session!,
+
                 name:
                   payload.adminName,
+
                 username:
                   payload.adminUsername,
+
                 email:
                   payload.adminEmail,
               }
