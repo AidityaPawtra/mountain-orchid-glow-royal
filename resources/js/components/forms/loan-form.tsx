@@ -8,6 +8,10 @@ import { itemAvailability } from "@/lib/finance";
 import { todayISO } from "@/lib/format";
 import type { InventoryItem, LoanRecord } from "@/lib/types";
 
+export type LoanFormResult =
+  | { ok: true; message?: undefined }
+  | { ok: false; message: string };
+
 export type LoanFormValue = {
   borrowerName: string;
   phone: string;
@@ -29,7 +33,12 @@ export function LoanForm({
   items: InventoryItem[];
   initial?: Partial<LoanRecord>;
   submitLabel: string;
-  onSubmit: (value: LoanFormValue) => { ok: true } | { ok: false; message: string };
+  /**
+   * Boleh sinkron atau Promise. Untuk simpan ke database, kembalikan
+   * Promise dari submitToServer() supaya pesan error dari server
+   * (mis. stok tidak cukup) tampil di dalam form.
+   */
+  onSubmit: (value: LoanFormValue) => LoanFormResult | Promise<LoanFormResult>;
   onCancel: () => void;
 }) {
   const [form, setForm] = useState<LoanFormValue>({
@@ -44,6 +53,7 @@ export function LoanForm({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const selected = items.find((item) => item.id === form.itemId);
   const available = useMemo(() => {
@@ -52,8 +62,9 @@ export function LoanForm({
     return itemAvailability(selected) + restored;
   }, [selected, initial]);
 
-  function handleSubmit(event: React.FormEvent) {
+  async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (submitting) return;
     const nextErrors: Record<string, string> = {};
     if (!form.borrowerName.trim()) nextErrors.borrowerName = "Nama peminjam wajib diisi.";
     if (!form.phone.trim()) nextErrors.phone = "Nomor HP wajib diisi.";
@@ -72,14 +83,19 @@ export function LoanForm({
     setErrors(nextErrors);
     setFormError("");
     if (Object.keys(nextErrors).length) return;
-    const result = onSubmit({
-      ...form,
-      borrowerName: form.borrowerName.trim(),
-      phone: form.phone.trim(),
-      purpose: form.purpose.trim(),
-      notes: form.notes.trim(),
-    });
-    if (!result.ok) setFormError(result.message);
+    setSubmitting(true);
+    try {
+      const result = await onSubmit({
+        ...form,
+        borrowerName: form.borrowerName.trim(),
+        phone: form.phone.trim(),
+        purpose: form.purpose.trim(),
+        notes: form.notes.trim(),
+      });
+      if (!result.ok) setFormError(result.message);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -166,7 +182,9 @@ export function LoanForm({
         <Button type="button" variant="outline" onClick={onCancel}>
           Batal
         </Button>
-        <Button type="submit">{submitLabel}</Button>
+        <Button type="submit" disabled={submitting}>
+          {submitting ? "Menyimpan..." : submitLabel}
+        </Button>
       </div>
     </form>
   );

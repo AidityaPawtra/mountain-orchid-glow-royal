@@ -1,7 +1,6 @@
 import '../css/app.css';
 import { createInertiaApp } from '@inertiajs/react';
 import { createRoot } from 'react-dom/client';
-import { StoreHydrator } from '@/components/layout/store-hydrator';
 import { Toaster } from '@/components/ui/sonner';
 
 const appName = import.meta.env.VITE_APP_NAME || 'BUMDes Desa Wengkal';
@@ -19,10 +18,10 @@ createInertiaApp({
   setup({ el, App, props }) {
     const root = createRoot(el);
     root.render(
-      <StoreHydrator initialData={(props.initialPage.props as any)?.initialData}>
+      <>
         <App {...props} />
         <Toaster />
-      </StoreHydrator>
+      </>
     );
   },
   progress: {

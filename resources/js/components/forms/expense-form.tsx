@@ -27,12 +27,19 @@ export function ExpenseForm({
   onSubmit,
   onCancel,
   bumdesTypeId,
+  hideCategory = false,
 }: {
   initial?: ExpenseFormValue;
   submitLabel: string;
   onSubmit: (value: ExpenseFormValue) => void;
   onCancel: () => void;
   bumdesTypeId?: string;
+  /**
+   * Sembunyikan pemilihan kategori (dipakai di halaman Jenis BUMDes).
+   * Kategori tetap terisi otomatis dengan "Lainnya" di baliknya,
+   * supaya kolom category di database tetap terisi.
+   */
+  hideCategory?: boolean;
 }) {
   const [form, setForm] = useState<ExpenseFormValue>({
     ...(initial ?? EMPTY),
@@ -58,7 +65,7 @@ export function ExpenseForm({
     event.preventDefault();
     const nextErrors: Record<string, string> = {};
     if (!form.date) nextErrors.date = "Tanggal wajib diisi.";
-    if (!form.category) nextErrors.category = "Kategori wajib dipilih.";
+    if (!hideCategory && !form.category) nextErrors.category = "Kategori wajib dipilih.";
     if (!form.purpose.trim()) nextErrors.purpose = "Keperluan wajib diisi.";
     if (!form.description.trim()) nextErrors.description = "Keterangan wajib diisi.";
     const amount = parseAmount(amountText);
@@ -69,6 +76,7 @@ export function ExpenseForm({
     onSubmit({
   ...form,
   bumdesTypeId: form.bumdesTypeId || bumdesTypeId || "",
+  category: hideCategory ? (form.category || "Lainnya") : form.category,
   amount,
   purpose: form.purpose.trim(),
   description: form.description.trim(),
@@ -77,7 +85,7 @@ export function ExpenseForm({
 
   return (
     <form onSubmit={handleSubmit} className="grid gap-4">
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className={hideCategory ? "grid gap-4" : "grid gap-4 sm:grid-cols-2"}>
         <Field label="Tanggal" htmlFor="exp-date" required error={errors.date}>
           <Input
             id="exp-date"
@@ -86,8 +94,9 @@ export function ExpenseForm({
             onChange={(e) => setForm({ ...form, date: e.target.value })}
           />
         </Field>
-        <Field label="Kategori" htmlFor="exp-cat" required error={errors.category}>
-          <Select
+        {!hideCategory ? (
+          <Field label="Kategori" htmlFor="exp-cat" required error={errors.category}>
+            <Select
   id="exp-cat"
   value={form.category}
   onChange={(e) =>
@@ -102,7 +111,8 @@ export function ExpenseForm({
     </option>
   ))}
 </Select>
-        </Field>
+          </Field>
+        ) : null}
       </div>
       <Field label="Keperluan" htmlFor="exp-purpose" required error={errors.purpose}>
         <Input

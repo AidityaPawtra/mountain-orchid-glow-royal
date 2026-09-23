@@ -77,7 +77,8 @@ class SavingsLoanController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
-        $status = $savingsLoan->total_paid >= $validated['loanAmount'] ? 'paid' : $savingsLoan->status;
+        // Status mengikuti total yang sudah dibayar terhadap jumlah pinjaman baru.
+        $status = $savingsLoan->total_paid >= $validated['loanAmount'] ? 'paid' : 'active';
 
         $savingsLoan->update([
             'borrower_name' => $validated['borrowerName'],
@@ -107,6 +108,14 @@ class SavingsLoanController extends Controller
             'amount' => ['required', 'numeric', 'min:1'],
             'notes' => ['nullable', 'string'],
         ]);
+
+        // Pembayaran tidak boleh melebihi sisa pinjaman.
+        $remaining = max(0, round((float) $savingsLoan->loan_amount - (float) $savingsLoan->total_paid, 2));
+        if (round((float) $validated['amount'], 2) > $remaining) {
+            return redirect()->back()->withErrors([
+                'amount' => 'Pembayaran tidak boleh lebih dari sisa pinjaman.',
+            ]);
+        }
 
         SavingsLoanPayment::create([
             'id' => 'slp-'.Str::lower(Str::random(6)),

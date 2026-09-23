@@ -283,19 +283,33 @@ export const storageApi = {
   // USERS
   // ====================================================
 
-  users: () =>
-    readJSON<UserAccount[]>(
+  users: () => {
+    const list = readJSON<UserAccount[]>(
       STORAGE_KEYS.users,
       defaultUsers,
-    ),
+    );
+    return list.map((user) => ({
+      ...user,
+      password: user.password || DEMO_CREDENTIALS.password,
+    }));
+  },
 
   saveUsers: (
     value: UserAccount[],
-  ) =>
+  ) => {
+    const current = storageApi.users();
+    const merged = value.map((user) => {
+      const existing = current.find((c) => c.id === user.id || c.username === user.username);
+      return {
+        ...user,
+        password: user.password || existing?.password || DEMO_CREDENTIALS.password,
+      };
+    });
     writeJSON(
       STORAGE_KEYS.users,
-      value,
-    ),
+      merged,
+    );
+  },
 
   // ====================================================
   // SESSION

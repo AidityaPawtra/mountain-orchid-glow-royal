@@ -11,17 +11,11 @@ use Inertia\Response;
 
 class AuthController extends Controller
 {
-    /**
-     * Show the login page.
-     */
     public function showLogin(): Response
     {
         return Inertia::render('Login');
     }
 
-    /**
-     * Handle an incoming authentication request.
-     */
     public function login(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
@@ -29,9 +23,14 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        $loginType = filter_var($credentials['username'], FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+        $loginType = filter_var($credentials['username'], FILTER_VALIDATE_EMAIL)
+            ? 'email'
+            : 'username';
 
-        if (Auth::attempt([$loginType => $credentials['username'], 'password' => $credentials['password']], $request->boolean('remember'))) {
+        if (Auth::attempt(
+            [$loginType => $credentials['username'], 'password' => $credentials['password']],
+            $request->boolean('remember'),
+        )) {
             $request->session()->regenerate();
 
             return redirect()->intended(route('dashboard'));
@@ -42,9 +41,6 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Destroy an authenticated session.
-     */
     public function logout(Request $request): RedirectResponse
     {
         Auth::logout();

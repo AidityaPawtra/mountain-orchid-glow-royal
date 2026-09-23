@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, Head } from "@inertiajs/react";
+import { useMemo, useState, type ReactNode } from "react";
+import { Link, Head, usePage } from "@inertiajs/react";
 import {
   ArrowDownLeft,
   ArrowLeft,
@@ -21,31 +21,39 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useAppStore } from "@/lib/store";
 import { formatRupiah } from "@/lib/format";
+import { mapBumdesType, mapExpense, mapIncome } from "@/lib/mapper";
+import { submitToServer } from "@/lib/submit";
 
-interface Props {
-  id?: string;
-}
+function JenisBumdesShowPage() {
+  // Unit usaha + seluruh pemasukan/pengeluarannya berasal dari database
+  // (BumdesTypeController@show).
+  const { bumdesType: rawType } = usePage<{
+    bumdesType: (Record<string, unknown> & {
+      incomes?: unknown[];
+      expenses?: unknown[];
+    }) | null;
+  }>().props;
 
-export default function JenisBumdesShowPage({ id: propId }: Props) {
-  const currentId = propId || (typeof window !== "undefined" ? window.location.pathname.split("/").filter(Boolean).pop() : "");
-
-  const bumdesTypes = useAppStore((state) => state.bumdesTypes);
-  const income = useAppStore((state) => state.income);
-  const expenses = useAppStore((state) => state.expenses);
-
-  const addIncome = useAppStore((state) => state.addIncome);
-  const addExpense = useAppStore((state) => state.addExpense);
+  const bumdes = useMemo(
+    () => (rawType ? mapBumdesType(rawType) : null),
+    [rawType],
+  );
+  const income = useMemo(
+    () => (Array.isArray(rawType?.incomes) ? rawType.incomes.map(mapIncome) : []),
+    [rawType],
+  );
+  const expenses = useMemo(
+    () => (Array.isArray(rawType?.expenses) ? rawType.expenses.map(mapExpense) : []),
+    [rawType],
+  );
 
   const [incomeOpen, setIncomeOpen] = useState(false);
   const [expenseOpen, setExpenseOpen] = useState(false);
 
-  const bumdes = bumdesTypes.find((item) => item.id === currentId);
-
   if (!bumdes) {
     return (
-      <AppShell>
+      <>
         <Head title="BUMDes Tidak Ditemukan" />
         <div className="space-y-6">
           <Link
@@ -63,7 +71,7 @@ export default function JenisBumdesShowPage({ id: propId }: Props) {
             </p>
           </div>
         </div>
-      </AppShell>
+      </>
     );
   }
 
@@ -97,26 +105,44 @@ export default function JenisBumdesShowPage({ id: propId }: Props) {
     })),
   ].sort((a, b) => b.date.localeCompare(a.date));
 
-  function handleAddIncome(value: IncomeFormValue) {
-    addIncome({
-      ...value,
+  async function handleAddIncome(value: IncomeFormValue) {
+    const result = await submitToServer("post", "/uang-masuk", {
       bumdesTypeId: currentBumdes.id,
+      date: value.date,
+      source: value.source,
+      category: value.category,
+      description: value.description,
+      amount: value.amount,
+      proof: value.proof ? JSON.stringify(value.proof) : null,
     });
+    if (!result.ok) {
+      toast.error(result.message);
+      return;
+    }
     setIncomeOpen(false);
     toast.success(`Pemasukan ${currentBumdes.name} berhasil disimpan.`);
   }
 
-  function handleAddExpense(value: ExpenseFormValue) {
-    addExpense({
-      ...value,
+  async function handleAddExpense(value: ExpenseFormValue) {
+    const result = await submitToServer("post", "/uang-keluar", {
       bumdesTypeId: currentBumdes.id,
+      date: value.date,
+      category: value.category,
+      purpose: value.purpose,
+      description: value.description,
+      amount: value.amount,
+      proof: value.proof ? JSON.stringify(value.proof) : null,
     });
+    if (!result.ok) {
+      toast.error(result.message);
+      return;
+    }
     setExpenseOpen(false);
     toast.success(`Pengeluaran ${currentBumdes.name} berhasil disimpan.`);
   }
 
   return (
-    <AppShell>
+    <>
       <Head title={`${bumdes.name} - BUMDes Desa Wengkal`} />
       <div className="space-y-6">
         {/* HEADER */}
@@ -340,6 +366,10 @@ export default function JenisBumdesShowPage({ id: propId }: Props) {
           </DialogContent>
         </Dialog>
       </div>
-    </AppShell>
+    </>
   );
 }
+
+export default JenisBumdesShowPage;
+
+JenisBumdesShowPage.layout = (page: ReactNode) => <AppShell>{page}</AppShell>;

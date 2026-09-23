@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Link, router, Head, usePage } from "@inertiajs/react";
 import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -18,24 +18,26 @@ import {
 } from "@/components/ui/dialog";
 import { resolveLoanStatus } from "@/lib/finance";
 import { formatDate } from "@/lib/format";
-import { useAppStore } from "@/lib/store";
+import { mapItem, mapLoan } from "@/lib/mapper";
+import { submitToServer } from "@/lib/submit";
 
-export default function LoanDetailPage({ id: propId }: { id?: string }) {
-  const { url } = usePage();
-  const urlId = url.split("/").pop();
-  const id = propId || urlId;
-
-  const loan = useAppStore((s) => s.loans.find((row) => row.id === id));
-  const items = useAppStore((s) => s.items);
-  const returnLoan = useAppStore((s) => s.returnLoan);
-  const updateLoan = useAppStore((s) => s.updateLoan);
-  const deleteLoan = useAppStore((s) => s.deleteLoan);
+function LoanDetailPage() {
+  // Detail peminjaman & daftar barang berasal dari database (LoanController@show)
+  const { loan: rawLoan, items: rawItems } = usePage<{
+    loan: unknown;
+    items: unknown[];
+  }>().props;
+  const loan = useMemo(() => (rawLoan ? mapLoan(rawLoan) : null), [rawLoan]);
+  const items = useMemo(
+    () => (Array.isArray(rawItems) ? rawItems.map(mapItem) : []),
+    [rawItems],
+  );
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   if (!loan) {
     return (
-      <AppShell>
+      <>
         <Head title="Detail Peminjaman - BUMDes Desa Wengkal" />
         <div className="space-y-4">
           <Link href="/peminjaman" className="inline-flex items-center gap-2 text-sm text-primary">
@@ -46,15 +48,15 @@ export default function LoanDetailPage({ id: propId }: { id?: string }) {
             Data peminjaman tidak ditemukan.
           </Card>
         </div>
-      </AppShell>
+      </>
     );
   }
 
   const status = resolveLoanStatus(loan);
   const canReturn = status !== "returned";
 
-  function handleReturn() {
-    const result = returnLoan(loan!.id);
+  async function handleReturn() {
+    const result = await submitToServer("post", `/peminjaman/${loan!.id}/return`);
     if (!result.ok) {
       toast.error(result.message);
       return;
@@ -62,8 +64,18 @@ export default function LoanDetailPage({ id: propId }: { id?: string }) {
     toast.success("Barang ditandai sudah dikembalikan. Stok bertambah otomatis.");
   }
 
+  async function handleDelete() {
+    const result = await submitToServer("delete", `/peminjaman/${loan!.id}`);
+    if (!result.ok) {
+      toast.error(result.message);
+      return;
+    }
+    // Server sudah mengarahkan kembali ke daftar peminjaman.
+    toast.success("Data peminjaman dihapus.");
+  }
+
   return (
-    <AppShell>
+    <>
       <Head title={`Peminjaman: ${loan.borrowerName} - BUMDes Desa Wengkal`} />
       <div className="space-y-6">
         <PageHeader
@@ -127,8 +139,8 @@ export default function LoanDetailPage({ id: propId }: { id?: string }) {
               initial={loan}
               submitLabel="Simpan Perubahan"
               onCancel={() => setEditing(false)}
-              onSubmit={(value) => {
-                const result = updateLoan(loan.id, value);
+              onSubmit={async (value) => {
+                const result = await submitToServer("put", `/peminjaman/${loan.id}`, value);
                 if (!result.ok) return result;
                 setEditing(false);
                 toast.success("Data peminjaman diperbarui.");
@@ -143,14 +155,10 @@ export default function LoanDetailPage({ id: propId }: { id?: string }) {
           onOpenChange={setDeleting}
           title="Hapus peminjaman?"
           description="Jika barang masih dipinjam, stok akan dikembalikan ke inventaris."
-          onConfirm={() => {
-            deleteLoan(loan.id);
-            toast.success("Data peminjaman dihapus.");
-            router.visit("/peminjaman");
-          }}
+          onConfirm={handleDelete}
         />
       </div>
-    </AppShell>
+    </>
   );
 }
 
@@ -162,3 +170,7 @@ function Info({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+export default LoanDetailPage;
+
+LoanDetailPage.layout = (page: ReactNode) => <AppShell>{page}</AppShell>;

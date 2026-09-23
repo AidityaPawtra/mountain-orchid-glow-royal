@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Head } from "@inertiajs/react";
+import { useMemo, useState, type ReactNode } from "react";
+import { Head, usePage } from "@inertiajs/react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/app-shell";
@@ -29,14 +29,17 @@ import {
 import { ITEM_CATEGORIES } from "@/lib/constants";
 import { itemAvailability, matchesQuery } from "@/lib/finance";
 import { usePagination } from "@/hooks/use-pagination";
-import { useAppStore } from "@/lib/store";
+import { mapItem } from "@/lib/mapper";
+import { submitToServer } from "@/lib/submit";
 import type { InventoryItem } from "@/lib/types";
 
-export default function BarangPage() {
-  const items = useAppStore((s) => s.items);
-  const addItem = useAppStore((s) => s.addItem);
-  const updateItem = useAppStore((s) => s.updateItem);
-  const deleteItem = useAppStore((s) => s.deleteItem);
+function BarangPage() {
+  // Data barang berasal dari database (InventoryItemController@index)
+  const { items: rawItems } = usePage<{ items: unknown[] }>().props;
+  const items: InventoryItem[] = useMemo(
+    () => (Array.isArray(rawItems) ? rawItems.map(mapItem) : []),
+    [rawItems],
+  );
 
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
@@ -52,8 +55,52 @@ export default function BarangPage() {
 
   const pager = usePagination(filtered);
 
+  async function handleCreate(value: ItemFormValue) {
+    const result = await submitToServer("post", "/barang", {
+      name: value.name,
+      category: value.category,
+      quantity: value.quantity,
+      condition: value.condition,
+    });
+    if (!result.ok) {
+      toast.error(result.message);
+      return;
+    }
+    setOpen(false);
+    toast.success("Barang berhasil ditambahkan.");
+  }
+
+  async function handleUpdate(value: ItemFormValue) {
+    if (!editing) return;
+    const result = await submitToServer("put", `/barang/${editing.id}`, {
+      name: value.name,
+      category: value.category,
+      quantity: value.quantity,
+      condition: value.condition,
+    });
+    if (!result.ok) {
+      toast.error(result.message);
+      return;
+    }
+    setEditing(null);
+    toast.success("Data barang diperbarui.");
+  }
+
+  async function handleDelete() {
+    if (!deleting) return;
+    const target = deleting;
+    setDeleting(null);
+    if (target.borrowed > 0) {
+      toast.error("Barang tidak dapat dihapus karena masih ada yang dipinjam.");
+      return;
+    }
+    const result = await submitToServer("delete", `/barang/${target.id}`);
+    if (!result.ok) toast.error(result.message);
+    else toast.success("Barang dihapus.");
+  }
+
   return (
-    <AppShell>
+    <>
       <Head title="Data Barang - BUMDes Desa Wengkal" />
       <div className="space-y-6">
         <PageHeader
@@ -151,11 +198,7 @@ export default function BarangPage() {
             <ItemForm
               submitLabel="Simpan"
               onCancel={() => setOpen(false)}
-              onSubmit={(value: ItemFormValue) => {
-                addItem(value);
-                setOpen(false);
-                toast.success("Barang berhasil ditambahkan.");
-              }}
+              onSubmit={handleCreate}
             />
           </DialogContent>
         </Dialog>
@@ -171,11 +214,7 @@ export default function BarangPage() {
                 initial={editing}
                 submitLabel="Simpan Perubahan"
                 onCancel={() => setEditing(null)}
-                onSubmit={(value) => {
-                  updateItem(editing.id, value);
-                  setEditing(null);
-                  toast.success("Data barang diperbarui.");
-                }}
+                onSubmit={handleUpdate}
               />
             ) : null}
           </DialogContent>
@@ -186,15 +225,13 @@ export default function BarangPage() {
           onOpenChange={(v) => !v && setDeleting(null)}
           title="Hapus barang?"
           description="Barang yang masih dipinjam tidak dapat dihapus."
-          onConfirm={() => {
-            if (!deleting) return;
-            const result = deleteItem(deleting.id);
-            if (!result.ok) toast.error(result.message);
-            else toast.success("Barang dihapus.");
-            setDeleting(null);
-          }}
+          onConfirm={handleDelete}
         />
       </div>
-    </AppShell>
+    </>
   );
 }
+
+export default BarangPage;
+
+BarangPage.layout = (page: ReactNode) => <AppShell>{page}</AppShell>;

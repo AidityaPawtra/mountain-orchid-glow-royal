@@ -23,7 +23,9 @@ class BumdesSeeder extends Seeder
     public function run(): void
     {
         // 1. Akun Admin Default
-        User::updateOrCreate(
+        // firstOrCreate: hanya dibuat kalau belum ada. Password yang sudah
+        // diganti lewat halaman Profil TIDAK ikut ter-reset saat db:seed.
+        User::firstOrCreate(
             ['email' => 'admin@bumdeswengkal.id'],
             [
                 'name' => 'Admin',
@@ -33,8 +35,8 @@ class BumdesSeeder extends Seeder
             ]
         );
 
-        // 2. Profil & Pengaturan BUMDes
-        Setting::updateOrCreate(
+        // 2. Profil & Pengaturan BUMDes (tidak menimpa perubahan dari halaman Profil)
+        Setting::firstOrCreate(
             ['id' => 1],
             [
                 'bumdes_name' => 'BUMDes Desa Wengkal',

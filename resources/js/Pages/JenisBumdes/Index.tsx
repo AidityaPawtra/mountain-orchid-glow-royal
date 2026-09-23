@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Link, Head } from "@inertiajs/react";
+import { useMemo, useState, type ReactNode } from "react";
+import { Link, Head, usePage } from "@inertiajs/react";
 import {
   Building2,
   Pencil,
@@ -21,7 +21,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { useAppStore } from "@/lib/store";
+import { mapBumdesType } from "@/lib/mapper";
+import { submitToServer } from "@/lib/submit";
 import type { BumdesType } from "@/lib/types";
 
 type FormData = {
@@ -38,11 +39,13 @@ const emptyForm: FormData = {
   status: "active",
 };
 
-export default function JenisBumdesPage() {
-  const bumdesTypes = useAppStore((state) => state.bumdesTypes);
-  const addBumdesType = useAppStore((state) => state.addBumdesType);
-  const updateBumdesType = useAppStore((state) => state.updateBumdesType);
-  const deleteBumdesType = useAppStore((state) => state.deleteBumdesType);
+function JenisBumdesPage() {
+  // Data unit usaha berasal dari database (BumdesTypeController@index)
+  const { bumdesTypes: rawTypes } = usePage<{ bumdesTypes: unknown[] }>().props;
+  const bumdesTypes: BumdesType[] = useMemo(
+    () => (Array.isArray(rawTypes) ? rawTypes.map(mapBumdesType) : []),
+    [rawTypes],
+  );
 
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -78,7 +81,7 @@ export default function JenisBumdesPage() {
     setDialogOpen(true);
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const name = form.name.trim();
     const category = form.category.trim();
@@ -101,27 +104,38 @@ export default function JenisBumdesPage() {
       status: form.status,
     };
 
-    if (editingId) {
-      updateBumdesType(editingId, payload);
-      toast.success("Jenis BUMDes berhasil diperbarui.");
-    } else {
-      addBumdesType(payload);
-      toast.success("Jenis BUMDes berhasil ditambahkan.");
+    const result = editingId
+      ? await submitToServer("put", `/jenis-bumdes/${editingId}`, payload)
+      : await submitToServer("post", "/jenis-bumdes", payload);
+
+    if (!result.ok) {
+      toast.error(result.message);
+      return;
     }
+
+    toast.success(
+      editingId
+        ? "Jenis BUMDes berhasil diperbarui."
+        : "Jenis BUMDes berhasil ditambahkan.",
+    );
 
     setDialogOpen(false);
     setEditingId(null);
     setForm({ ...emptyForm });
   };
 
-  const handleDelete = (item: BumdesType) => {
+  const handleDelete = async (item: BumdesType) => {
     const confirmed = window.confirm(
       `Hapus "${item.name}"?\n\nData jenis BUMDes ini akan dihapus dari sistem.`
     );
 
     if (!confirmed) return;
 
-    deleteBumdesType(item.id);
+    const result = await submitToServer("delete", `/jenis-bumdes/${item.id}`);
+    if (!result.ok) {
+      toast.error(result.message);
+      return;
+    }
     toast.success("Jenis BUMDes berhasil dihapus.");
   };
 
@@ -129,7 +143,7 @@ export default function JenisBumdesPage() {
   const inactiveCount = bumdesTypes.filter((item) => item.status === "inactive").length;
 
   return (
-    <AppShell>
+    <>
       <Head title="Jenis BUMDes - BUMDes Desa Wengkal" />
       <div className="space-y-6 pb-8">
         {/* HEADER */}
@@ -408,6 +422,10 @@ export default function JenisBumdesPage() {
           </DialogContent>
         </Dialog>
       </div>
-    </AppShell>
+    </>
   );
 }
+
+export default JenisBumdesPage;
+
+JenisBumdesPage.layout = (page: ReactNode) => <AppShell>{page}</AppShell>;

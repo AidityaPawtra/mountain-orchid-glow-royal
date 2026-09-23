@@ -27,12 +27,19 @@ export function IncomeForm({
   onSubmit,
   onCancel,
   bumdesTypeId,
+  hideCategory = false,
 }: {
   initial?: IncomeFormValue;
   submitLabel: string;
   onSubmit: (value: IncomeFormValue) => void;
   onCancel: () => void;
   bumdesTypeId?: string;
+  /**
+   * Sembunyikan pemilihan kategori (dipakai di halaman Jenis BUMDes).
+   * Kategori tetap terisi otomatis dengan "Lainnya" di baliknya,
+   * supaya kolom category di database tetap terisi.
+   */
+  hideCategory?: boolean;
 }) {
   const [form, setForm] = useState<IncomeFormValue>({
   ...(initial ?? EMPTY),
@@ -45,7 +52,7 @@ export function IncomeForm({
     const nextErrors: Record<string, string> = {};
     if (!next.date) nextErrors.date = "Tanggal wajib diisi.";
     if (!next.source.trim()) nextErrors.source = "Sumber dana wajib diisi.";
-    if (!next.category) nextErrors.category = "Kategori wajib dipilih.";
+    if (!hideCategory && !next.category) nextErrors.category = "Kategori wajib dipilih.";
     if (!next.description.trim()) nextErrors.description = "Keterangan wajib diisi.";
     const amount = parseAmount(rawAmount);
     if (!rawAmount.trim()) nextErrors.amount = "Jumlah wajib diisi.";
@@ -70,6 +77,7 @@ export function IncomeForm({
    onSubmit({
   ...form,
   bumdesTypeId: form.bumdesTypeId || bumdesTypeId || "",
+  category: hideCategory ? (form.category || "Lainnya") : form.category,
   amount,
   source: form.source.trim(),
   description: form.description.trim(),
@@ -78,7 +86,7 @@ export function IncomeForm({
 
   return (
     <form onSubmit={handleSubmit} className="grid gap-4">
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className={hideCategory ? "grid gap-4" : "grid gap-4 sm:grid-cols-2"}>
         <Field label="Tanggal" htmlFor="inc-date" required error={errors.date}>
           <Input
             id="inc-date"
@@ -87,8 +95,9 @@ export function IncomeForm({
             onChange={(e) => setForm({ ...form, date: e.target.value })}
           />
         </Field>
-        <Field label="Kategori" htmlFor="inc-cat" required error={errors.category}>
-          <Select
+        {!hideCategory ? (
+          <Field label="Kategori" htmlFor="inc-cat" required error={errors.category}>
+            <Select
   id="inc-cat"
   value={form.category}
   onChange={(e) =>
@@ -103,7 +112,8 @@ export function IncomeForm({
     </option>
   ))}
 </Select>
-        </Field>
+          </Field>
+        ) : null}
       </div>
       <Field label="Sumber Dana" htmlFor="inc-source" required error={errors.source}>
         <Input

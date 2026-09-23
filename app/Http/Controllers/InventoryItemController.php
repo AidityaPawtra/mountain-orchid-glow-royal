@@ -59,6 +59,13 @@ class InventoryItemController extends Controller
             'condition' => ['required', 'string', 'in:Baik,Rusak Ringan,Rusak Berat'],
         ]);
 
+        // Jumlah total tidak boleh lebih kecil dari yang sedang dipinjam.
+        if ($validated['quantity'] < $item->borrowed) {
+            return redirect()->back()->withErrors([
+                'quantity' => "Jumlah tidak boleh lebih kecil dari yang sedang dipinjam ({$item->borrowed}).",
+            ]);
+        }
+
         $item->update($validated);
 
         return redirect()->back()->with('success', 'Data barang berhasil diperbarui.');
@@ -70,6 +77,13 @@ class InventoryItemController extends Controller
     public function destroy(string $id): RedirectResponse
     {
         $item = InventoryItem::findOrFail($id);
+
+        if ($item->borrowed > 0) {
+            return redirect()->back()->withErrors([
+                'item' => 'Barang tidak dapat dihapus karena masih ada yang dipinjam.',
+            ]);
+        }
+
         $item->delete();
 
         return redirect()->back()->with('success', 'Barang inventaris berhasil dihapus.');

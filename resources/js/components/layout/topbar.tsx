@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
-import { router } from "@inertiajs/react";
-import { Bell, LogOut, Menu, Search, Settings, UserRound } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Link, router, usePage } from "@inertiajs/react";
+import { Bell, LogOut, Menu, Search } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,68 +15,161 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { SidebarNav } from "@/components/layout/sidebar";
 import { formatDateTime } from "@/lib/format";
-import { mergeTransactions } from "@/lib/finance";
-import { useAppStore } from "@/lib/store";
+import {
+  DEFAULT_SETTINGS,
+  mapNotification,
+  mapSettings,
+} from "@/lib/mapper";
+
+type SearchResult = { id: string; label: string; to: string };
 
 export function Topbar({
   onToggleCollapse,
 }: {
   onToggleCollapse: () => void;
 }) {
-  const session = useAppStore((s) => s.session);
-  const settings = useAppStore((s) => s.settings);
-  const notifications = useAppStore((s) => s.notifications);
-  const markRead = useAppStore((s) => s.markNotificationRead);
-  const markAll = useAppStore((s) => s.markAllNotificationsRead);
-  const logout = useAppStore((s) => s.logout);
-  const income = useAppStore((s) => s.income);
-  const expenses = useAppStore((s) => s.expenses);
-  const loans = useAppStore((s) => s.loans);
-  const items = useAppStore((s) => s.items);
+  // Semua data topbar berasal dari server (database):
+  // user, profil BUMDes, dan notifikasi dibagikan HandleInertiaRequests.
+  const {
+    auth,
+    settings: rawSettings,
+    notifications: rawNotifications,
+  } = usePage<{
+    auth: { user: { id: string; name: string; username: string; email: string } | null };
+    settings: unknown;
+    notifications: unknown[];
+  }>().props;
+
+  const settings = useMemo(
+    () => mapSettings(rawSettings) ?? DEFAULT_SETTINGS,
+    [rawSettings],
+  );
+  const mappedNotifications = useMemo(
+    () =>
+      Array.isArray(rawNotifications) ? rawNotifications.map(mapNotification) : [],
+    [rawNotifications],
+  );
+
+  // State lokal supaya badge/daftar notifikasi bisa langsung ter-update
+  // (dicentang dibaca) tanpa harus menunggu halaman di-reload oleh Inertia.
+  // Disinkronkan ulang tiap kali props dari server berubah (mis. setelah
+  // pindah halaman biasa).
+  const [notifications, setNotifications] = useState(mappedNotifications);
+  useEffect(() => {
+    setNotifications(mappedNotifications);
+  }, [mappedNotifications]);
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [results, setResults] = useState<SearchResult[]>([]);
 
   const unread = notifications.filter((n) => !n.read).length;
-  const name = session?.name || settings.adminName || "Admin";
+  const name = auth?.user?.name || settings.adminName || "Admin";
 
-  const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (q.length < 2) return [];
-    const tx = mergeTransactions(income, expenses)
-      .filter((row) =>
-        [row.title, row.category].join(" ").toLowerCase().includes(q),
-      )
-      .slice(0, 4)
-      .map((row) => ({
-        id: row.id,
-        label: `${row.type === "income" ? "Masuk" : "Keluar"} · ${row.title}`,
-        to: row.type === "income" ? "/uang-masuk" : "/uang-keluar",
-      }));
-    const loanHits = loans
-      .filter((row) =>
-        [row.borrowerName, row.itemName, row.purpose].join(" ").toLowerCase().includes(q),
-      )
-      .slice(0, 3)
-      .map((row) => ({
-        id: row.id,
-        label: `Pinjam · ${row.borrowerName} — ${row.itemName}`,
-        to: `/peminjaman/${row.id}`,
-      }));
-    const itemHits = items
-      .filter((row) => row.name.toLowerCase().includes(q))
-      .slice(0, 3)
-      .map((row) => ({
-        id: row.id,
-        label: `Barang · ${row.name}`,
-        to: "/barang",
-      }));
-    return [...tx, ...loanHits, ...itemHits].slice(0, 8);
-  }, [query, income, expenses, loans, items]);
+  function csrfToken(): string {
+    return (
+      document
+        .querySelector('meta[name="csrf-token"]')
+        ?.getAttribute("content") ?? ""
+    );
+  }
+
+  /**
+   * Tandai notifikasi terbaca lewat fetch biasa (BUKAN router.post Inertia).
+   * Sengaja dipisah dari navigasi Inertia: kalau memakai router.post di sini,
+   * itu memicu "kunjungan halaman" Inertia sendiri yang bisa berbenturan
+   * dengan router.visit(item.href) yang dijalankan hampir bersamaan saat
+   * notifikasi diklik -- responsnya bisa saling menimpa dan halaman terasa
+   * "balik sendiri" ke Dashboard sesaat setelah pindah halaman. Dengan fetch
+   * biasa, ini murni panggilan API di belakang layar, tidak menyentuh
+   * riwayat/route Inertia sama sekali.
+   */
+  async function markReadOnServer(id: string) {
+    try {
+      await fetch(`/notifications/${encodeURIComponent(id)}/read`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "X-CSRF-TOKEN": csrfToken(),
+        },
+      });
+    } catch {
+      // Biarkan; status "dibaca" tetap tampil optimis di UI, akan
+      // tersinkron lagi saat halaman berikutnya dimuat.
+    }
+  }
+
+  async function markAllReadOnServer() {
+    try {
+      await fetch("/notifications/read-all", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "X-CSRF-TOKEN": csrfToken(),
+        },
+      });
+    } catch {
+      // sama seperti di atas
+    }
+  }
+
+  function markRead(id: string) {
+    setNotifications((prev) =>
+      prev.map((row) => (row.id === id ? { ...row, read: true } : row)),
+    );
+    void markReadOnServer(id);
+  }
+
+  function markAll() {
+    setNotifications((prev) => prev.map((row) => ({ ...row, read: true })));
+    void markAllReadOnServer();
+  }
+
+  function handleNotificationClick(item: (typeof notifications)[number]) {
+    markRead(item.id);
+    // Satu-satunya navigasi Inertia yang sebenarnya untuk aksi ini.
+    if (item.href) router.visit(item.href);
+  }
+
+  // Pencarian global: ditanyakan ke database lewat GET /pencarian?q=...
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) {
+      setResults([]);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      try {
+        const response = await fetch(`/pencarian?q=${encodeURIComponent(q)}`, {
+          headers: { Accept: "application/json" },
+          credentials: "same-origin",
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          setResults([]);
+          return;
+        }
+        const data = await response.json();
+        setResults(Array.isArray(data) ? (data as SearchResult[]).slice(0, 8) : []);
+      } catch {
+        // dibatalkan (ketikan baru) atau koneksi gagal: abaikan
+      }
+    }, 250);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [query]);
 
   function handleLogout() {
-    logout();
-    router.visit("/login");
+    router.post("/logout");
   }
 
   return (
@@ -156,10 +249,7 @@ export function Topbar({
                 <DropdownMenuItem
                   key={item.id}
                   className="flex-col items-start gap-1 py-2.5"
-                  onSelect={() => {
-                    markRead(item.id);
-                    if (item.href) router.visit(item.href);
-                  }}
+                  onSelect={() => handleNotificationClick(item)}
                 >
                   <span className="flex w-full items-center justify-between gap-2">
                     <span className="font-medium text-foreground">{item.title}</span>
@@ -173,36 +263,30 @@ export function Topbar({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 hover:bg-muted"
-            >
-              <Avatar name={name} />
-              <span className="hidden text-left sm:block">
-                <span className="block text-sm font-medium leading-tight">{name}</span>
-                <span className="block text-xs text-muted-foreground">Admin</span>
-              </span>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuLabel>Akun</DropdownMenuLabel>
-            <DropdownMenuItem onSelect={() => router.visit("/profile")}>
-              <UserRound className="size-4" />
-              Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => router.visit("/profile")}>
-              <Settings className="size-4" />
-              Pengaturan
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={handleLogout} className="text-danger">
-              <LogOut className="size-4" />
-              Keluar
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Klik avatar/nama -> langsung ke halaman Profile. Tanpa dropdown. */}
+        <Link
+          href="/profile"
+          className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 hover:bg-muted"
+        >
+          <Avatar name={name} />
+          <span className="hidden text-left sm:block">
+            <span className="block text-sm font-medium leading-tight">{name}</span>
+            <span className="block text-xs text-muted-foreground">Admin</span>
+          </span>
+        </Link>
+
+        {/* Tombol Keluar terpisah, di sebelah profile. */}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={handleLogout}
+          aria-label="Keluar"
+          title="Keluar"
+          className="text-danger hover:text-danger"
+        >
+          <LogOut className="size-5" />
+        </Button>
       </div>
 
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>

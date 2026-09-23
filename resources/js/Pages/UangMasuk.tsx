@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Head } from "@inertiajs/react";
+import { useMemo, useState, type ReactNode } from "react";
+import { Head, router, usePage } from "@inertiajs/react";
 import { ArrowDownLeft, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/app-shell";
@@ -31,14 +31,20 @@ import { INCOME_CATEGORIES } from "@/lib/constants";
 import { filterByPeriod, matchesQuery, totalIncome } from "@/lib/finance";
 import { formatDate, formatRupiah } from "@/lib/format";
 import { usePagination } from "@/hooks/use-pagination";
-import { useAppStore } from "@/lib/store";
+import { mapIncome } from "@/lib/mapper";
 import type { IncomeRecord } from "@/lib/types";
 
-export default function UangMasukPage() {
-  const income = useAppStore((s) => s.income);
-  const addIncome = useAppStore((s) => s.addIncome);
-  const updateIncome = useAppStore((s) => s.updateIncome);
-  const deleteIncome = useAppStore((s) => s.deleteIncome);
+// ======================================================
+// PAGE
+// ======================================================
+
+function UangMasukPage() {
+  // Receive income from Inertia page props (from IncomeController)
+  const { income: rawIncome } = usePage<{ income: unknown[] }>().props;
+  const income: IncomeRecord[] = useMemo(
+    () => (Array.isArray(rawIncome) ? rawIncome.map(mapIncome) : []),
+    [rawIncome],
+  );
 
   const [query, setQuery] = useState("");
   const [period, setPeriod] = useState("all");
@@ -46,6 +52,7 @@ export default function UangMasukPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<IncomeRecord | null>(null);
   const [deleting, setDeleting] = useState<IncomeRecord | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const filtered = useMemo(() => {
     return filterByPeriod(income, period)
@@ -53,26 +60,82 @@ export default function UangMasukPage() {
       .filter((row) =>
         matchesQuery([row.source, row.category, row.description, formatRupiah(row.amount)], query),
       )
-      .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt));
+      .sort((a, b) => b.date.localeCompare(a.date));
   }, [income, period, category, query]);
 
   const pager = usePagination(filtered);
 
   function handleCreate(value: IncomeFormValue) {
-    addIncome(value);
-    setOpen(false);
-    toast.success("Uang masuk berhasil disimpan.");
+    setSubmitting(true);
+    router.post(
+      "/uang-masuk",
+      {
+        bumdesTypeId: value.bumdesTypeId || null,
+        date: value.date,
+        source: value.source,
+        category: value.category,
+        description: value.description,
+        amount: value.amount,
+        proof: value.proof ? JSON.stringify(value.proof) : null,
+      },
+      {
+        preserveScroll: true,
+        onSuccess: () => {
+          setOpen(false);
+          toast.success("Uang masuk berhasil disimpan.");
+        },
+        onError: () => {
+          toast.error("Gagal menyimpan data. Periksa kembali isian formulir.");
+        },
+        onFinish: () => setSubmitting(false),
+      },
+    );
   }
 
   function handleUpdate(value: IncomeFormValue) {
     if (!editing) return;
-    updateIncome(editing.id, value);
-    setEditing(null);
-    toast.success("Data pemasukan diperbarui.");
+    setSubmitting(true);
+    router.put(
+      `/uang-masuk/${editing.id}`,
+      {
+        bumdesTypeId: value.bumdesTypeId || null,
+        date: value.date,
+        source: value.source,
+        category: value.category,
+        description: value.description,
+        amount: value.amount,
+        proof: value.proof ? JSON.stringify(value.proof) : null,
+      },
+      {
+        preserveScroll: true,
+        onSuccess: () => {
+          setEditing(null);
+          toast.success("Data pemasukan diperbarui.");
+        },
+        onError: () => {
+          toast.error("Gagal memperbarui data.");
+        },
+        onFinish: () => setSubmitting(false),
+      },
+    );
+  }
+
+  function handleDelete() {
+    if (!deleting) return;
+    router.delete(`/uang-masuk/${deleting.id}`, {
+      preserveScroll: true,
+      onSuccess: () => {
+        toast.success("Data pemasukan dihapus.");
+      },
+      onError: () => {
+        toast.error("Gagal menghapus data.");
+      },
+      onFinish: () => setDeleting(null),
+    });
   }
 
   return (
-    <AppShell>
+    <>
       <Head title="Uang Masuk - BUMDes Desa Wengkal" />
       <div className="space-y-6">
         <PageHeader
@@ -170,16 +233,18 @@ export default function UangMasukPage() {
           )}
         </div>
 
+        {/* TAMBAH */}
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Tambah Uang Masuk</DialogTitle>
               <DialogDescription>Catat pemasukan baru ke kas BUMDes.</DialogDescription>
             </DialogHeader>
-            <IncomeForm submitLabel="Simpan" onSubmit={handleCreate} onCancel={() => setOpen(false)} />
+            <IncomeForm submitLabel={submitting ? "Menyimpan..." : "Simpan"} onSubmit={handleCreate} onCancel={() => setOpen(false)} />
           </DialogContent>
         </Dialog>
 
+        {/* EDIT */}
         <Dialog open={Boolean(editing)} onOpenChange={(v) => !v && setEditing(null)}>
           <DialogContent>
             <DialogHeader>
@@ -189,7 +254,7 @@ export default function UangMasukPage() {
             {editing ? (
               <IncomeForm
                 initial={editing}
-                submitLabel="Simpan Perubahan"
+                submitLabel={submitting ? "Menyimpan..." : "Simpan Perubahan"}
                 onSubmit={handleUpdate}
                 onCancel={() => setEditing(null)}
               />
@@ -197,20 +262,19 @@ export default function UangMasukPage() {
           </DialogContent>
         </Dialog>
 
+        {/* HAPUS */}
         <ConfirmDialog
           open={Boolean(deleting)}
           onOpenChange={(v) => !v && setDeleting(null)}
           title="Hapus pemasukan?"
           description="Data yang dihapus akan mengubah saldo BUMDes secara otomatis."
-          onConfirm={() => {
-            if (deleting) {
-              deleteIncome(deleting.id);
-              toast.success("Data pemasukan dihapus.");
-            }
-            setDeleting(null);
-          }}
+          onConfirm={handleDelete}
         />
       </div>
-    </AppShell>
+    </>
   );
 }
+
+export default UangMasukPage;
+
+UangMasukPage.layout = (page: ReactNode) => <AppShell>{page}</AppShell>;

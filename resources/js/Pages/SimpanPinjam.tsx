@@ -1,4 +1,4 @@
-import { Head } from "@inertiajs/react";
+import { Head, usePage } from "@inertiajs/react";
 import { AppShell } from "@/components/layout/app-shell";
 import {
   CalendarDays,
@@ -11,7 +11,9 @@ import {
   WalletCards,
 } from "lucide-react";
 import {
+  useMemo,
   useState,
+  type ReactNode,
 } from "react";
 import { toast } from "sonner";
 
@@ -29,7 +31,11 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-import { useAppStore } from "@/lib/store";
+import {
+  mapSavingsLoan,
+  mapSavingsLoanPayment,
+} from "@/lib/mapper";
+import { submitToServer } from "@/lib/submit";
 import type {
   SavingsLoanPayment,
   SavingsLoanRecord,
@@ -179,46 +185,31 @@ function getStatusClass(
 // ======================================================
 
 function SimpanPinjamPage() {
-  const ready =
-    useAppStore(
-      (state) => state.ready,
-    );
+  // Data simpan pinjam berasal dari database
+  // (SavingsLoanController@index)
+  const {
+    savingsLoans: rawSavingsLoans,
+    savingsLoanPayments: rawPayments,
+  } = usePage<{
+    savingsLoans: unknown[];
+    savingsLoanPayments: unknown[];
+  }>().props;
 
-  const savingsLoans =
-    useAppStore(
-      (state) =>
-        state.savingsLoans,
-    );
+  const savingsLoans: SavingsLoanRecord[] = useMemo(
+    () =>
+      Array.isArray(rawSavingsLoans)
+        ? rawSavingsLoans.map(mapSavingsLoan)
+        : [],
+    [rawSavingsLoans],
+  );
 
-  const savingsLoanPayments =
-    useAppStore(
-      (state) =>
-        state.savingsLoanPayments,
-    );
-
-  const addSavingsLoan =
-    useAppStore(
-      (state) =>
-        state.addSavingsLoan,
-    );
-
-  const updateSavingsLoan =
-    useAppStore(
-      (state) =>
-        state.updateSavingsLoan,
-    );
-
-  const deleteSavingsLoan =
-    useAppStore(
-      (state) =>
-        state.deleteSavingsLoan,
-    );
-
-  const addSavingsLoanPayment =
-    useAppStore(
-      (state) =>
-        state.addSavingsLoanPayment,
-    );
+  const savingsLoanPayments: SavingsLoanPayment[] = useMemo(
+    () =>
+      Array.isArray(rawPayments)
+        ? rawPayments.map(mapSavingsLoanPayment)
+        : [],
+    [rawPayments],
+  );
 
   // ====================================================
   // STATE
@@ -490,7 +481,7 @@ function SimpanPinjamPage() {
   // SAVE LOAN
   // ====================================================
 
-  function handleLoanSubmit(
+  async function handleLoanSubmit(
     event: React.FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
@@ -600,6 +591,18 @@ function SimpanPinjamPage() {
       return;
     }
 
+    const payload = {
+      borrowerName,
+      phone,
+      address,
+      loanDate: loanForm.loanDate,
+      dueDate: loanForm.dueDate,
+      loanAmount,
+      installmentAmount,
+      purpose,
+      notes,
+    };
+
     if (editingLoanId) {
       const currentLoan =
         savingsLoans.find(
@@ -615,47 +618,33 @@ function SimpanPinjamPage() {
         return;
       }
 
-      updateSavingsLoan(
-        editingLoanId,
-        {
-          borrowerName,
-          phone,
-          address,
-          loanDate:
-            loanForm.loanDate,
-          dueDate:
-            loanForm.dueDate,
-          loanAmount,
-          installmentAmount,
-          totalPaid:
-            currentLoan.totalPaid,
-          purpose,
-          notes,
-          status:
-            currentLoan.status,
-        },
-      );
+      const result =
+        await submitToServer(
+          "put",
+          `/simpan-pinjam/${editingLoanId}`,
+          payload,
+        );
+
+      if (!result.ok) {
+        toast.error(result.message);
+        return;
+      }
 
       toast.success(
         "Data pinjaman berhasil diperbarui.",
       );
     } else {
-      addSavingsLoan({
-        borrowerName,
-        phone,
-        address,
-        loanDate:
-          loanForm.loanDate,
-        dueDate:
-          loanForm.dueDate,
-        loanAmount,
-        installmentAmount,
-        totalPaid: 0,
-        purpose,
-        notes,
-        status:
-          "active",
-      });
+      const result =
+        await submitToServer(
+          "post",
+          "/simpan-pinjam",
+          payload,
+        );
+
+      if (!result.ok) {
+        toast.error(result.message);
+        return;
+      }
 
       toast.success(
         "Pinjaman berhasil ditambahkan.",
@@ -673,7 +662,7 @@ function SimpanPinjamPage() {
   // SAVE PAYMENT
   // ====================================================
 
-  function handlePaymentSubmit(
+  async function handlePaymentSubmit(
     event: React.FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
@@ -722,23 +711,17 @@ function SimpanPinjamPage() {
       return;
     }
 
-    const data: Omit<
-      SavingsLoanPayment,
-      | "id"
-      | "savingsLoanId"
-      | "createdAt"
-    > = {
-      paymentDate:
-        paymentForm.paymentDate,
-      amount,
-      notes:
-        paymentForm.notes.trim(),
-    };
-
     const result =
-      addSavingsLoanPayment(
-        selectedLoan.id,
-        data,
+      await submitToServer(
+        "post",
+        `/simpan-pinjam/${selectedLoan.id}/payment`,
+        {
+          paymentDate:
+            paymentForm.paymentDate,
+          amount,
+          notes:
+            paymentForm.notes.trim(),
+        },
       );
 
     if (!result.ok) {
@@ -764,7 +747,7 @@ function SimpanPinjamPage() {
   // DELETE
   // ====================================================
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!deletingLoanId) {
       return;
     }
@@ -783,9 +766,16 @@ function SimpanPinjamPage() {
       return;
     }
 
-    deleteSavingsLoan(
-      deletingLoanId,
-    );
+    const result =
+      await submitToServer(
+        "delete",
+        `/simpan-pinjam/${deletingLoanId}`,
+      );
+
+    if (!result.ok) {
+      toast.error(result.message);
+      return;
+    }
 
     toast.success(
       "Data pinjaman berhasil dihapus.",
@@ -804,25 +794,11 @@ function SimpanPinjamPage() {
   }
 
   // ====================================================
-  // LOADING
-  // ====================================================
-
-  if (!ready) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="text-sm text-muted-foreground">
-          Memuat data...
-        </div>
-      </div>
-    );
-  }
-
-  // ====================================================
   // RENDER
   // ====================================================
 
   return (
-    <AppShell>
+    <>
       <Head title="Simpan Pinjam - BUMDes Desa Wengkal" />
       <div className="space-y-6 pb-8">
       {/* HEADER */}
@@ -1680,7 +1656,7 @@ function SimpanPinjamPage() {
         </DialogContent>
       </Dialog>
     </div>
-    </AppShell>
+    </>
   );
 }
 
@@ -2073,3 +2049,4 @@ function InfoRow({
   );
 }
 export default SimpanPinjamPage;
+SimpanPinjamPage.layout = (page: ReactNode) => <AppShell>{page}</AppShell>;

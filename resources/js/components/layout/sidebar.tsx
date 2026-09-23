@@ -34,6 +34,11 @@ const NAV: NavItem[] = [
     icon: LayoutDashboard,
   },
   {
+    to: "/jenis-bumdes",
+    label: "Jenis BUMDes",
+    icon: Building2,
+  },
+  {
     label: "Keuangan",
     icon: Wallet,
     children: [
@@ -63,11 +68,6 @@ const NAV: NavItem[] = [
     to: "/barang",
     label: "Data Barang",
     icon: Boxes,
-  },
-  {
-    to: "/jenis-bumdes",
-    label: "Jenis BUMDes",
-    icon: Building2,
   },
   {
     to: "/laporan",

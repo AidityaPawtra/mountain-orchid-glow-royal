@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { Link, Head } from "@inertiajs/react";
+import { useMemo, type ReactNode } from "react";
+import { Link, Head, usePage } from "@inertiajs/react";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -30,28 +30,50 @@ import {
   totalIncome,
 } from "@/lib/finance";
 import { formatDate, formatNumber, formatRupiah } from "@/lib/format";
-import { useAppStore } from "@/lib/store";
+import { mapExpense, mapIncome, mapLoan } from "@/lib/mapper";
 
-export default function DashboardPage() {
-  const session = useAppStore((s) => s.session);
-  const income = useAppStore((s) => s.income);
-  const expenses = useAppStore((s) => s.expenses);
-  const loans = useAppStore((s) => s.loans);
+function DashboardPage() {
+  // Semua data dashboard berasal dari database (DashboardController@index)
+  const {
+    auth,
+    income: rawIncome,
+    expenses: rawExpenses,
+    loans: rawLoans,
+  } = usePage<{
+    auth: { user: { name: string } | null };
+    income: unknown[];
+    expenses: unknown[];
+    loans: unknown[];
+  }>().props;
+
+  const income = useMemo(
+    () => (Array.isArray(rawIncome) ? rawIncome.map(mapIncome) : []),
+    [rawIncome],
+  );
+  const expenses = useMemo(
+    () => (Array.isArray(rawExpenses) ? rawExpenses.map(mapExpense) : []),
+    [rawExpenses],
+  );
+  const loans = useMemo(
+    () => (Array.isArray(rawLoans) ? rawLoans.map(mapLoan) : []),
+    [rawLoans],
+  );
+  const year = new Date().getFullYear();
 
   const masuk = totalIncome(income);
   const keluar = totalExpense(expenses);
   const saldo = computeBalance(income, expenses);
   const stats = loanStats(loans);
-  const chartData = useMemo(() => cashflowByMonth(income, expenses, 2026), [income, expenses]);
+  const chartData = useMemo(() => cashflowByMonth(income, expenses, year), [income, expenses, year]);
   const recent = mergeTransactions(income, expenses).slice(0, 6);
 
   return (
-    <AppShell>
+    <>
       <Head title="Dashboard - BUMDes Desa Wengkal" />
       <div className="space-y-6">
         <PageHeader
           title="Dashboard"
-          description={`Selamat datang, ${session?.name || "Admin"}`}
+          description={`Selamat datang, ${auth?.user?.name || "Admin"}`}
         />
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -70,7 +92,7 @@ export default function DashboardPage() {
           <Card className="p-0">
             <CardHeader className="p-5 pb-2">
               <CardTitle>Grafik Arus Kas</CardTitle>
-              <p className="text-sm text-muted-foreground">Perbandingan uang masuk dan keluar per bulan (2026)</p>
+              <p className="text-sm text-muted-foreground">Perbandingan uang masuk dan keluar per bulan ({year})</p>
             </CardHeader>
             <CardContent className="h-80 p-5 pt-2">
                 <ResponsiveContainer width="100%" height="100%">
@@ -149,7 +171,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-    </AppShell>
+    </>
   );
 }
 
@@ -163,3 +185,7 @@ function LoanStatRow({ label, value, tone }: { label: string; value: number; ton
     </div>
   );
 }
+
+export default DashboardPage;
+
+DashboardPage.layout = (page: ReactNode) => <AppShell>{page}</AppShell>;

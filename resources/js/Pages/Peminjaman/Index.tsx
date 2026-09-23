@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { router, Head } from "@inertiajs/react";
+import { useMemo, useState, type ReactNode } from "react";
+import { router, Head, usePage } from "@inertiajs/react";
 import { AlertTriangle, Boxes, Package, PackageCheck, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/app-shell";
@@ -30,19 +30,30 @@ import {
 import { itemStats, loanStats, matchesQuery, withResolvedLoans } from "@/lib/finance";
 import { formatDate } from "@/lib/format";
 import { usePagination } from "@/hooks/use-pagination";
-import { useAppStore } from "@/lib/store";
+import { mapItem, mapLoan } from "@/lib/mapper";
+import { submitToServer } from "@/lib/submit";
 import type { LoanStatus } from "@/lib/types";
 
-export default function PeminjamanPage() {
-  const loans = useAppStore((s) => s.loans);
-  const items = useAppStore((s) => s.items);
-  const addLoan = useAppStore((s) => s.addLoan);
+function PeminjamanPage() {
+  // Data peminjaman & barang berasal dari database (LoanController@index)
+  const { loans: rawLoans, items: rawItems } = usePage<{
+    loans: unknown[];
+    items: unknown[];
+  }>().props;
+  const loans = useMemo(
+    () => (Array.isArray(rawLoans) ? rawLoans.map(mapLoan) : []),
+    [rawLoans],
+  );
+  const items = useMemo(
+    () => (Array.isArray(rawItems) ? rawItems.map(mapItem) : []),
+    [rawItems],
+  );
 
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<"all" | LoanStatus>("all");
   const [open, setOpen] = useState(false);
 
-  const resolved = withResolvedLoans(loans);
+  const resolved = useMemo(() => withResolvedLoans(loans), [loans]);
   const stats = loanStats(resolved);
   const inventory = itemStats(items);
 
@@ -58,7 +69,7 @@ export default function PeminjamanPage() {
   const pager = usePagination(filtered);
 
   return (
-    <AppShell>
+    <>
       <Head title="Peminjaman Barang - BUMDes Desa Wengkal" />
       <div className="space-y-6">
         <PageHeader
@@ -177,8 +188,8 @@ export default function PeminjamanPage() {
               items={items}
               submitLabel="Simpan"
               onCancel={() => setOpen(false)}
-              onSubmit={(value) => {
-                const result = addLoan(value);
+              onSubmit={async (value) => {
+                const result = await submitToServer("post", "/peminjaman", value);
                 if (!result.ok) return result;
                 setOpen(false);
                 toast.success("Peminjaman berhasil dicatat.");
@@ -188,6 +199,10 @@ export default function PeminjamanPage() {
           </DialogContent>
         </Dialog>
       </div>
-    </AppShell>
+    </>
   );
 }
+
+export default PeminjamanPage;
+
+PeminjamanPage.layout = (page: ReactNode) => <AppShell>{page}</AppShell>;
